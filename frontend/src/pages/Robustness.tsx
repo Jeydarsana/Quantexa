@@ -132,7 +132,7 @@ export default function Robustness() {
         <>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="card lg:col-span-2">
-            <h3 className="text-lg font-bold mb-4">Simulated Return Distribution (50 Iterations)</h3>
+            <h3 className="text-lg font-bold mb-4">Monte Carlo Return Distribution (50 Iterations)</h3>
             
             {isSimpleMode && (
               <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4 text-sm text-textMuted leading-relaxed">
