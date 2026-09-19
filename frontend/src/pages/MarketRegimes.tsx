@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Activity, AlertTriangle, Layers, HelpCircle } from 'lucide-react';
+import { Activity, AlertTriangle, Layers, HelpCircle, Compass } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ComposedChart, Line } from 'recharts';
 import { useMode } from '../contexts/ModeContext';
 import GlossaryTerm from '../components/GlossaryTerm';
+import AssetSelector from '../components/AssetSelector';
 
 export default function MarketRegimes() {
   const [ticker, setTicker] = useState('NVDA');
@@ -36,7 +37,7 @@ export default function MarketRegimes() {
 
   useEffect(() => {
     fetchRegimes();
-  }, []);
+  }, [ticker]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -68,19 +69,13 @@ export default function MarketRegimes() {
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="card grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-textMuted mb-1">Asset</label>
-          <select 
-            value={ticker} 
-            onChange={(e) => setTicker(e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none focus:border-primary"
-          >
-            <option value="NVDA">NVIDIA (NVDA)</option>
-            <option value="BTC">Bitcoin (BTC)</option>
-            <option value="GOLD">Gold (GLD ETF)</option>
-          </select>
-        </div>
+      <div className="card grid grid-cols-1 md:grid-cols-4 gap-4 items-end relative z-20">
+        <AssetSelector 
+          value={ticker} 
+          onChange={setTicker} 
+          label="Asset" 
+          compact 
+        />
         <div>
           <label className="block text-sm font-medium text-textMuted mb-1">Start Date</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none" />
