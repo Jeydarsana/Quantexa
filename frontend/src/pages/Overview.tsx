@@ -104,8 +104,8 @@ export default function Overview() {
               <span className="text-white font-semibold">SMA, EMA, Momentum, Mean Reversion</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-background rounded-lg">
-              <span className="text-textMuted">AI Failover Engine</span>
-              <span className="text-secondary font-semibold">Online (Gemini/Groq)</span>
+              <span className="text-textMuted">Local AI Engine</span>
+              <span className="text-secondary font-semibold">Online (Ollama Qwen)</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-background rounded-lg">
               <span className="text-textMuted">Monte Carlo Robustness</span>
