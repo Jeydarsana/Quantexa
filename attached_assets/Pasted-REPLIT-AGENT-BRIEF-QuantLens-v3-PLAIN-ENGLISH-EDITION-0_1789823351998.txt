@@ -1,0 +1,701 @@
+REPLIT AGENT BRIEF — "QuantLens" (v3 — PLAIN-ENGLISH EDITION)
+0. READ THIS FIRST (Agent Instructions)
+
+Build a complete, working, visually polished web application from the specification below.
+
+The single most important rule in this brief: every number the app shows must be accompanied by plain English that a person with zero finance background can understand. A first-time user must be able to open this app, pick two things from two dropdowns, press one button, and immediately understand what happened and what it means — without knowing what a Sharpe ratio, a drawdown, or a backtest is.
+
+If you ever have to choose between showing more data and making the meaning clear, choose clarity. Jargon is always allowed, but it must never appear alone — it must always be paired with a plain-English translation.
+
+Do not stub features. Do not leave TODO comments. Every endpoint must return real computed values. Ship a seeded dataset so the app works instantly on first load even with zero network access.
+
+Build order: (1) backend data layer + seed data, (2) asset taxonomy + quant engine, (3) plain-English explanation engine, (4) Strategy DNA, (5) backtest + portfolio simulation, (6) API routes, (7) frontend shell + theme, (8) pages one by one, (9) clarity + polish pass.
+
+1. APP OVERVIEW
+
+App name: QuantLens
+
+One-line description: QuantLens lets anyone pick two types of assets, press one button, and get a clear, plain-English answer about how risky they are, how they behave, and whether a trading strategy would actually have worked — with every number explained in normal language.
+
+Core problem it solves: Financial analysis tools are powerful but unreadable. They throw out numbers like "Sharpe 1.32, Max DD −24.6%, CAGR 11.4%" with no explanation, so only experts can use them. Meanwhile beginners are stuck with tools that are readable but shallow. QuantLens does both: real quantitative analysis underneath, plain English on the surface.
+
+Target users (both must be served equally):
+
+Beginner — a student or first-time user who has never heard of volatility. They need sentences, verdicts, and color-coded grades.
+Expert — a quant researcher or finance student who wants the actual metrics, formulas, and trade ledger. They can switch on Expert Mode to see everything.
+2. THE CLARITY SYSTEM (BUILD THIS FIRST — IT DEFINES THE WHOLE APP)
+2.1 Beginner Mode / Expert Mode toggle
+
+A prominent toggle in the top-right of the global control bar, labelled "Simple" and "Expert". Default: Simple. Persist the choice to localStorage.
+
+	Simple Mode (default)	Expert Mode
+Metric names	Plain names: "How bumpy the ride was"	Real names: "Annualized Volatility"
+Numbers shown per card	1 headline number + 1 sentence	Full metric grid
+Charts	3–4 essential charts with captions	All charts
+Tables	Hidden behind "Show details"	All visible
+Formulas	Hidden	Shown inline
+Trade ledger	Summary only	Full paginated ledger
+Jargon	Always translated	Shown with tooltip
+
+Both modes show the same underlying computed values. Expert Mode never adds new data the backend didn't already compute — it only reveals it.
+
+2.2 The Translation Table (implement exactly)
+
+Store this in core/glossary.py and mirror it in frontend/src/lib/glossary.ts. Every metric anywhere in the app must render using this table. Never display a raw metric name without its plain label in Simple Mode.
+
+Technical name	Plain-English label (Simple Mode)	One-line tooltip (both modes)	Good / bad direction
+Total Return	How much you'd have made	The total gain or loss over the whole period, as a percentage.	Higher is better
+CAGR	Average yearly growth	The steady yearly growth rate that would produce the same final result.	Higher is better
+Annualized Volatility	How bumpy the ride was	How much the price swings up and down. Big swings = nerve-racking.	Lower is calmer
+Sharpe Ratio	Reward for the risk taken	How much gain you got for each unit of stress. Above 1 is good, below 0 is bad.	Higher is better
+Sortino Ratio	Reward for the downside risk	Like the above, but only counts the losses, not the gains.	Higher is better
+Max Drawdown	Worst drop from a peak	The biggest fall from a high point before recovering. This is the "how bad did it get" number.	Closer to 0 is better
+Calmar Ratio	Growth vs worst drop	Compares yearly growth against the worst fall.	Higher is better
+VaR 95%	Typical bad day	On the worst 1 day out of 20, you'd expect to lose about this much.	Closer to 0 is better
+CVaR 95%	Average of the very worst days	When it goes badly, this is the average size of the damage.	Closer to 0 is better
+Beta	How closely it follows the other asset	1.0 means it moves in lockstep; 0 means unrelated.	Context
+Correlation	Do these two move together?	+1 = move together, 0 = unrelated, −1 = move opposite.	Context
+Skew	Are surprises up or down?	Negative means occasional nasty surprises.	Context
+Kurtosis	How often extreme days happen	Higher means more shock days than normal.	Context
+Win Rate	How often trades made money	Out of all completed trades, the share that ended in profit.	Higher is better
+Profit Factor	Money won vs money lost	Above 1 means wins outweighed losses.	Higher is better
+Buy-and-Hold Benchmark	Just buying and doing nothing	What you'd have got by buying once and never trading. The bar to beat.	Context
+Backtest	Test on the past	Running the strategy on historical data to see what would have happened.	—
+Slippage	Price moved before you bought	The small gap between the price you saw and the price you got.	Lower is better
+Transaction cost	Fees per trade	What you pay the broker each time you buy or sell.	Lower is better
+SMA / EMA	Average price line	A smoothed line showing the general direction, ignoring daily noise.	—
+Z-score	How unusual today's price is	How far the price is from its recent normal, measured in standard steps.	—
+Regime	What kind of market it was	Rising, falling, calm, or wild.	—
+Walk-forward test	Did it work on unseen data?	Tune on the first 70% of history, then test on the last 30% it has never seen.	—
+Monte Carlo	Luck test	Shuffles the trades 1,000 times to check the result wasn't a fluke.	—
+2.3 Every number gets a sentence
+
+Every metric card in the app renders four things, in this vertical order:
+
+Plain label (from §2.2) — 13px, --text-muted, uppercase. In Expert Mode, the technical name appears beneath in 11px.
+The number, large and mono, with a count-up animation.
+A color-coded badge: Good / Okay / Poor / Neutral, from the rules in §6.9.
+A generated sentence explaining what that specific number means for this specific asset, 14px.
+
+Example of a rendered card in Simple Mode:
+
+WORST DROP FROM A PEAK
+−24.6%
+Okay
+At its worst, this investment lost about a quarter of its value before recovering. That took 11 months to climb back.
+
+Every sentence must be generated from the real computed value, never hardcoded. Write a sentence template per metric in core/explain.py that fills in the actual number, the actual date, and the correct comparative word from the thresholds.
+
+2.4 The "What this means" bar
+
+Every chart in the app sits inside a ChartCard that has a caption strip underneath, in --text-muted, 13px, explaining in one or two sentences what the reader should take away from this chart with this data. Generated, not hardcoded.
+
+Example under the drawdown chart:
+
+This shows how far below its best-ever value the investment fell at each point in time. The deepest dip was −24.6% in March 2020. Flat sections at the top mean it was at a new high.
+
+2.5 The "Explain this page" button
+
+Top-right of every page: a lucide HelpCircle button labelled "What am I looking at?". Clicking it opens a shadcn Dialog with a short, friendly, non-technical explanation of that page — what it's for, what to do here, and what a good result looks like. Write real copy for all 8 pages, ~120 words each, written for someone who has never used a finance tool.
+
+2.6 The Plain-English Summary block
+
+At the top of the Overview, Strategy DNA, and Backtest pages, render a Summary block: a bordered card in --bg-elevated with an accent left border, containing 3 to 5 short bullet sentences in plain English summarizing everything below it. A user who reads only this block should understand the entire page result.
+
+Example after a backtest:
+
+You tested a moving average crossover strategy on Long-Term Investments from Jan 2018 to Dec 2025.
+It turned $100,000 into $164,300 — a gain of +64.3%.
+Just buying and holding would have given you +71.2%, so this strategy actually did worse than doing nothing.
+The ride was slightly calmer: the worst drop was −18.4% instead of −25.1%.
+It made 34 trades and paid $2,140 in fees, which ate about 8% of the profit.
+
+Generate every sentence from the real result object. This block must appear before any chart.
+
+2.7 Jargon is always clickable
+
+Any technical term appearing in generated text is wrapped in a <GlossaryTerm> component: dotted underline, and on hover/tap a shadcn Tooltip shows the §2.2 one-line definition. On mobile, tap opens a small popover.
+
+2.8 Numbers are always formatted for humans
+Currency: $164,300 — no decimals above $1,000; two decimals below.
+Percentages: always signed, always 1 or 2 decimals: +64.3%, −18.40%.
+Large numbers: 1.2M, 340K in compact spots; full value in tooltips.
+Ratios: 2 decimals: 1.32.
+Dates: 12 Mar 2020, never 2020-03-12.
+Never show raw floats like 0.6432871. Never show NaN, null, undefined, or Infinity — render — with the tooltip "Not enough data to calculate this."
+3. FULL FEATURE LIST
+Tier 1 — Core
+3.1 Dual-Dropdown Asset Selection
+
+Two dropdowns side by side, always visible in the global control bar on every page.
+
+Dropdown A — Short-Term Assets
+
+Cash and Cash Equivalents
+Accounts Receivable
+Inventory
+Prepaid Expenses
+
+Dropdown B — Long-Term Assets
+
+Deferred Tax Assets
+Long-Term Investments
+Goodwill
+Intangible Assets
+Property, Plant, and Equipment (PP&E)
+
+Rules:
+
+Each includes a "— None —" option. The user may pick from one, or one from each to run a two-asset comparison.
+If both are None, show a friendly empty state ("Pick something from either dropdown to begin") — never an error.
+Each option in the dropdown shows a one-line plain description underneath the category name, e.g. "Inventory — goods a company is holding to sell. Tracked using an industrials ETF." Use the descriptions in §7.2.
+Each category maps to a real tradable market proxy so data, indicators, and backtests are genuinely computable. Show the proxy as a caption under each dropdown and explain the whole mapping on /about.
+When both are populated, a "Comparing 2 assets" badge appears and comparison views unlock.
+3.2 Strategy DNA — guided 4-step pipeline
+
+A horizontal stepper that lights up stage by stage. Each stage has a plain-English title first and the technical name second.
+
+"What you picked" (Assets Chosen) — confirms selections, their proxy instruments, asset class, data coverage, observation count.
+"Getting the history" (Historical Data Accessed) — rows loaded, date range, data source (live or bundled), gaps forward-filled.
+"Measuring the risk" (Risk Generated) — volatility, Sharpe, Sortino, max drawdown, Calmar, VaR 95%, CVaR 95%, downside deviation, beta, skew, kurtosis. Assigns a Risk Grade: Very Low / Low / Moderate / High / Very High (thresholds in §7.8), rendered as a large colored gauge with a one-sentence explanation of what that grade feels like to hold.
+"Here's the result" (Analysis & Result) — indicators, regime classification, correlation, then a DNA Card containing the Risk Grade, market condition, momentum state, correlation state, and a generated plain-English paragraph.
+
+Triggered by one button labelled "Analyze my assets". Stages animate ~400ms apart so the sequence is visible during a demo. Each stage shows a plain status line while running, e.g. "Loading 2,847 days of price history…".
+
+3.3 Portfolio Simulation — with a plain-English verdict
+
+A dedicated panel (top of /backtest, and standalone at /simulation) showing, in this order, each with a plain label and an explanatory sentence:
+
+Field	Plain label shown to user
+Cash Balance	"Money not currently invested"
+Asset Chosen	"What you're trading"
+Trading Cost	"Fees you paid"
+Entry Price	"Price when you bought"
+Exit Price	"Price when you sold"
+Profit and Loss	"Money made or lost"
+Investment Verdict	"Should you do this?"
+
+The Investment Verdict is the centerpiece: a large pill reading PROCEED, PROCEED WITH CAUTION, or DO NOT PROCEED, followed by a one-sentence plain summary, then bullet reasons split into "Reasons in favour" (green check icons) and "Reasons against" (amber alert icons). Every bullet must be written in plain English and cite the real number that triggered it.
+
+Example bullets:
+
+✓ The strategy earned more than simply buying and holding (+64.3% vs +51.0%).
+⚠ It only made 7 trades, which is too few to tell whether this was skill or luck.
+⚠ When tested on years it had never seen, performance dropped sharply — the settings may be over-tuned to the past.
+
+Always append verbatim: "This is a test on historical data, not investment advice. What happened before does not tell you what will happen next."
+
+3.4 Remaining core features
+Multi-asset data pipeline — load, clean, align, normalize daily OHLCV for every proxy; handle differing trading calendars by forward-filling to a common business-day index; persist to SQLite.
+Quantitative indicator engine — SMA(20/50/200), EMA(12/26/50), daily/log/cumulative returns, rolling volatility (20d/60d), annualized volatility, Sharpe, Sortino, max drawdown, drawdown series, rolling 30/90/252-day returns, Calmar.
+Cross-asset correlation — Pearson matrix heatmap with plain-English cell tooltips ("These two moved together most of the time"), plus rolling 90-day correlation.
+Strategy backtesting — SMA Crossover, EMA Trend, Momentum, Mean Reversion. Each strategy is presented in the dropdown with a plain description (§7.7) so a beginner knows what they're choosing.
+Realistic trading simulation — initial capital, position sizing, transaction cost bps, slippage bps, execution at next bar's open, full trade ledger, equity curve, cash tracking, trade count, win rate, average win/loss, profit factor.
+Strategy vs Buy-and-Hold — labelled in the UI as "Your strategy vs just buying and holding", with overlaid equity curves and a comparison table where the winner of each row is highlighted and annotated with "better" / "worse".
+Parameter testing — all parameters adjustable with instant re-run; each slider has a plain caption explaining what raising or lowering it does.
+Market regime analysis — labelled "How it did in different market conditions", with regimes named in plain terms: Rising market, Falling market, Calm period, Wild period.
+Interactive dashboard — price with average lines, returns histogram, rolling volatility, underwater drawdown, correlation heatmap, buy/sell markers, equity curve, regime bands — each with a §2.4 caption.
+Tier 2 — High-impact differentiators
+Backtest Integrity card — titled "Is this test honest?", listing in plain English the five guardrails applied: decisions are made using only information available at the time; trades execute the next morning, not at the price that triggered them; the start-up period is excluded; fees are charged on both buying and selling; nothing was picked with hindsight.
+Strategy Lab — all four strategies compared on one leaderboard with a plain "Winner" tag and a sentence explaining why.
+Walk-forward split — titled "Did it work on data it had never seen?", with a clear warning card if out-of-sample Sharpe < 50% of in-sample.
+Monte Carlo — titled "Was this just luck?", showing a fan chart plus the single most important sentence: "In 1,000 reshuffles of these trades, 72% ended in profit."
+Blended two-asset portfolio — weight slider (0–100%) with a live plain caption: "70% Long-Term Investments, 30% Cash — a cautious mix."
+Export — trade ledger, metrics, equity curve as CSV; DNA card and plain-English summary as a downloadable text summary.
+Preset scenarios — "The 2020 crash", "The 2022 slump", "A strong bull run", "Everything we have". Named in plain language, each sets assets + dates + strategy and runs immediately.
+Tier 3 — Nice-to-have (only after Tiers 1–2 fully work)
+VaR/ES at 95% and 99%, historical and parametric.
+Live data refresh button.
+Light theme toggle.
+Shareable URL state encoding both dropdowns, strategy, params, date range.
+4. TECH STACK
+
+Use exactly this. Do not substitute.
+
+Backend: Python 3.11 · FastAPI · Uvicorn · pandas · numpy · scipy · yfinance · SQLAlchemy + SQLite (quantlens.db) · pydantic v2
+
+Frontend: React 18 + TypeScript · Vite · Tailwind CSS · shadcn/ui (Card, Button, Select, Slider, Input, Tabs, Table, Badge, Tooltip, Popover, Dialog, Skeleton, Switch, Progress, Accordion) · Recharts · lucide-react · TanStack Query · react-router-dom · date-fns
+
+Layout
+
+/backend
+  main.py
+  /routers   assets.py analytics.py correlation.py backtest.py
+             regimes.py dna.py simulation.py glossary.py
+  /core      asset_registry.py  glossary.py  explain.py   # ← explanation engine
+             data_loader.py  indicators.py  metrics.py
+             strategies.py  backtester.py  regimes.py
+             montecarlo.py  risk_grade.py  verdict.py
+  /data      BIL.csv LQD.csv XLI.csv IEF.csv AGG.csv SPY.csv
+             IGV.csv NVDA.csv VNQ.csv GC=F.csv BTC-USD.csv
+  requirements.txt
+/frontend
+  /src /components /pages /lib/api.ts /lib/types.ts /lib/glossary.ts
+       App.tsx main.tsx index.css
+
+Backend on 8000; Vite on 5173 proxying /api → http://localhost:8000. In production FastAPI serves frontend/dist with an SPA catch-all so the whole app runs from one URL.
+
+5. PAGES & USER FLOW
+
+Persistent 240px left sidebar. Persistent global control bar on every page containing: Dropdown A, Dropdown B, date range + presets, the Simple/Expert toggle, and the "What am I looking at?" button.
+
+Sidebar labels must be plain, with the technical name as a smaller subtitle:
+
+Overview          — Start here
+Analyze           — Strategy DNA
+Deep Dive         — Charts & stats
+Relationships     — Correlation
+Test a Strategy   — Backtest
+Simulation        — Money & verdict
+Strategy Lab      — Compare all
+How it works      — Methodology
+Page 1 — / Overview — "Start here"
+If nothing is selected: a friendly first-run panel with a 3-step illustration — 1. Pick an asset. 2. Press Analyze. 3. Read the plain-English result. Plus a "Try an example" button that pre-fills Long-Term Investments and runs everything, so a judge sees a full result in one click.
+Plain-English Summary block (§2.6).
+Four metric cards (§2.3 format): How much you'd have made · How bumpy the ride was · Reward for the risk taken · Worst drop from a peak.
+Price chart with toggleable average lines (chips labelled "20-day average", "50-day average", "200-day average") and market-condition bands, with a §2.4 caption.
+Three mini charts: Bumpiness over time · Growth of your money · How far below the peak — each captioned.
+Right rail "Quick facts": latest price, 52-week high/low, best day, worst day, share of days that went up. In Expert Mode, add skew and kurtosis.
+CTA: "Analyze my assets →".
+Page 2 — /dna Strategy DNA — "Analyze"
+The 4-stage stepper (§3.2) with plain stage titles.
+Stage 3 Risk Panel: large radial Risk Grade gauge with a sentence like "Moderate risk — expect meaningful ups and downs, and be ready for a drop of around 25% at some point."
+Stage 4 DNA Card: Risk Grade, market condition, momentum, correlation, plus a generated plain-English paragraph.
+Buttons: "Run again", "Test a strategy on this →", "Download summary".
+Page 3 — /analytics Deep Dive
+
+Tabs, each with a plain name and technical subtitle: Gains & losses (Returns) · Bumpiness (Volatility) · Bad patches (Drawdown) · Over time (Rolling metrics).
+
+Gains & losses: daily returns histogram with a caption explaining the shape; monthly heatmap (years × months, green/red, value printed); growth chart.
+Bumpiness: 20d vs 60d rolling volatility; volatility by calendar year as bars.
+Bad patches: underwater chart + table of the 5 worst falls (when it started, how deep, how long to recover) with plain column headers.
+Over time: rolling 252-day Sharpe and rolling 30/90/252-day returns.
+In Simple Mode, show only the first chart of each tab plus a "Show more charts" accordion.
+Page 4 — /correlation Relationships
+Matrix heatmap with plain tooltips per cell: "Inventory and Long-Term Investments moved in the same direction about 60% of the time (correlation 0.60)."
+Rolling correlation chart with a zero line and caption explaining that relationships change.
+Scatter of daily moves with a fitted line, beta and R² (Expert Mode only for R²).
+Auto-generated insight sentences built from real values.
+Page 5 — /backtest Test a Strategy ← hero page
+
+Sticky ~340px config panel left, results right.
+
+Config panel — every control has a plain caption:
+
+Strategy select, each option showing its plain description (§7.7).
+Dynamic parameters per strategy, each slider captioned, e.g. "Fast average (20 days) — a smaller number reacts faster but gives more false alarms."
+SMA Crossover: fast 5–100 (default 20), slow 20–250 (default 50)
+EMA Trend: period 5–200 (default 50), confirmation days 0–10 (default 2)
+Momentum: lookback 5–250 (default 90), threshold 0–20% (default 0)
+Mean Reversion: lookback 10–120 (default 20), entry z −3 to 0 (default −1.5), exit z 0 to 3 (default 0.5)
+Starting money (default 100,000) · How much to invest each time, % (default 100) · Fee per trade in bps (default 10) · Slippage bps (default 5) · Allow betting on falls (shorts) toggle · Blend slider when two assets are chosen
+Buttons: "Run the test", "Reset", preset scenarios.
+
+Results panel, in this exact order:
+
+Plain-English Summary block (§2.6) — before anything else.
+Portfolio Simulation panel (§3.3) with the big verdict pill.
+Six metric cards in §2.3 format, each showing the strategy value with the buy-and-hold value beneath and a plain "better"/"worse" tag.
+Equity curve: "Your strategy" solid accent vs "Just buying and holding" dashed neutral, with a caption naming the winner.
+Price chart with green "bought here" triangles and red "sold here" triangles, captioned.
+Cash vs invested area chart — "When your money was in the market".
+Comparison table with winning cells highlighted.
+Market-condition table: Rising / Falling / Calm / Wild × days, share of period, strategy return, benchmark return.
+Walk-forward card — "Did it work on data it had never seen?"
+Monte Carlo card — "Was this just luck?"
+Trade ledger — Simple Mode shows a 3-line summary and a "Show all trades" button; Expert Mode shows the paginated table with CSV export.
+Backtest Integrity card — "Is this test honest?"
+Page 6 — /simulation Simulation
+
+Full-width standalone Portfolio Simulation panel with a trade-by-trade timeline scrubber. Dragging it updates Cash Balance, Entry Price, Exit Price, and P&L to that moment, with a live sentence: "After trade 12 on 14 Aug 2021, you were holding 240 shares and up $8,430." Built for live demoing.
+
+Page 7 — /compare Strategy Lab
+All four strategies plus benchmark: 5-line equity chart.
+Sortable leaderboard, best value per column highlighted, winner tagged with a sentence explaining why it won.
+Parameter sweep heatmap with a plain caption: "Bright patches are settings that worked well. If only one tiny patch is bright, that's a warning sign — it means the strategy only worked by luck on one exact setting." Clicking a cell loads those parameters into /backtest.
+Page 8 — /about How it works
+Full category → proxy mapping table with plain rationale per row.
+A glossary section rendering the entire §2.2 table as a searchable list.
+Every formula written out (Expert content, collapsed by default).
+Verdict rule engine explained in plain English.
+Bias mitigations, data sources, and the prominent disclaimer.
+Flow
+
+/ pick from both dropdowns (or press "Try an example") → /dna press Analyze, read the Risk Grade → /analytics and /correlation for depth → /backtest run a strategy and read the verdict → tune → /simulation scrub the timeline → /compare rank strategies → /about for definitions.
+
+6. UI & DESIGN INSTRUCTIONS
+
+Feel: A modern research terminal that a beginner isn't afraid of. Dark, precise, but generous with whitespace and sentences. No stock photos, no gradient blobs, no emoji in the UI.
+
+Colors (dark default, CSS variables in index.css):
+
+--bg-base:      #0A0E14
+--bg-surface:   #111721
+--bg-elevated:  #18202C
+--border:       #1F2937
+--text-primary: #E6EDF3
+--text-muted:   #8B98A9
+--accent:       #4F8EF7
+--positive:     #22C55E
+--negative:     #EF4444
+--warning:      #F59E0B
+--neutral:      #64748B
+--short-term:   #38BDF8   /* Dropdown A: captions, chips, chart series */
+--long-term:    #A78BFA   /* Dropdown B: captions, chips, chart series */
+
+Risk Grade: Very Low 
+#22C55E · Low 
+#84CC16 · Moderate 
+#F59E0B · High 
+#F97316 · Very High 
+#EF4444.
+Verdict: PROCEED --positive · PROCEED WITH CAUTION --warning · DO NOT PROCEED --negative.
+
+Typography: Inter for all UI and generated sentences (400/500/600). JetBrains Mono, weight 500, font-variant-numeric: tabular-nums for all numbers. Page titles 24px/600. Card plain labels 13px/600 uppercase, 0.06em tracking, --text-muted. KPI values 30px/600 mono. Body and generated sentences 14px, line-height: 1.6 — sentences need room to breathe.
+
+Layout: Fixed 240px sidebar with the wordmark (lucide Activity in --accent + "QuantLens"); active item has a 2px --accent left border. Content max-width 1440px, 24px padding, 16px gap. Cards: --bg-surface, 1px --border, 10px radius, 20px padding, no drop shadows. KPI grid 4 → 2 under 1024px → 1 under 640px. The two dropdowns sit side by side above 768px and stack below. Every page usable at 390px.
+
+Charts (Recharts): horizontal grid lines only at 40% --border; axes --text-muted 11px mono, ticks only; custom tooltip in --bg-elevated with a 1px border, 8px radius, and plain-language field names; lines 2px with activeDot only; benchmark --neutral 2px strokeDasharray="4 4"; area fills via <linearGradient> 25%→0%; animationDuration={600}. Every chart has a legend with plain labels — never raw tickers alone.
+
+Animation & components: skeleton shimmer for every async surface; metric count-up over 700ms; Strategy DNA stages illuminate 400ms apart with check icons; "Run the test" shows a spinner labelled "Testing…"; results fade+slide in (opacity 0→1, translateY 8px→0, 300ms); page transitions 150ms fade; toasts on run/export/error.
+
+Empty and error states are always friendly sentences, never codes. "We don't have enough history for that date range — try a longer period." Never surface a stack trace.
+
+7. DATA & APIS
+7.1 Asset taxonomy
+SHORT_TERM = ["Cash and Cash Equivalents", "Accounts Receivable",
+              "Inventory", "Prepaid Expenses"]
+LONG_TERM  = ["Deferred Tax Assets", "Long-Term Investments", "Goodwill",
+              "Intangible Assets", "Property, Plant, and Equipment (PP&E)"]
+7.2 Category → proxy mapping + plain description (implement exactly)
+
+Store in core/asset_registry.py, expose via /api/assets, show the plain_description inside the dropdown option and the rationale on /about.
+
+Bucket	Category	Ticker	Proxy name	Class	Plain description (shown in dropdown)
+Short	Cash and Cash Equivalents	BIL	SPDR 1-3 Month T-Bill ETF	Cash	Money sitting safely, earning a little. Barely moves.
+Short	Accounts Receivable	LQD	iShares IG Corporate Bond ETF	Credit	Money customers owe you. Risk is that they don't pay.
+Short	Inventory	XLI	Industrial Select Sector SPDR	Equity	Goods waiting to be sold. Value rises and falls with demand.
+Short	Prepaid Expenses	IEF	iShares 7-10Y Treasury ETF	Rates	Things paid for in advance. Sensitive to interest rates.
+Long	Deferred Tax Assets	AGG	iShares Core US Aggregate Bond ETF	Fixed Income	Future tax savings. Slow-moving and rate-sensitive.
+Long	Long-Term Investments	SPY	SPDR S&P 500 ETF	Equity	Money invested for years. Grows over time, but bumpy.
+Long	Goodwill	IGV	iShares Expanded Tech-Software ETF	Equity	The premium paid in acquisitions. Can be written off suddenly.
+Long	Intangible Assets	NVDA	NVIDIA Corporation	Equity	Patents, brands, software. Valuable but hard to price.
+Long	PP&E	VNQ	Vanguard Real Estate ETF	Real Assets	Buildings, land, machines. Physical and slow to sell.
+
+Reference assets available in a "Reference" group in Dropdown B: GC=F (Gold, 
+#D4AF37, "A classic safe haven."), BTC-USD (Bitcoin, 
+#F7931A, "Very high risk, very high swings."), SPY (US Equities, "The overall US stock market.").
+
+Each registry entry carries: category, bucket, ticker, proxy_name, asset_class, plain_description, rationale, color, currency, calendar, periods_per_year (252, or 365 for BTC-USD).
+
+7.3 Data source & fallback
+
+Primary: yfinance (free, no key).
+
+python
+df = yf.download(ticker, start="2015-01-01", end=None,
+                 interval="1d", auto_adjust=True, progress=False)
+
+Critical: Replit sandboxes often block Yahoo. The app must never error because of this. Resolution order in data_loader.py:
+
+SQLite prices — if rows exist and the latest date is within 7 days, use them.
+Else try yfinance with a 15s timeout inside try/except; on success upsert to SQLite.
+On any failure, load /backend/data/{ticker}.csv into SQLite and use it. Set "data_source": "bundled" so the UI shows a quiet badge reading "Using saved data" with the tooltip "We couldn't reach the live data source, so we're using a saved copy. All analysis still works."
+
+Seed CSVs for every ticker, 2015-01-01 → 2025-12-31, daily. Try a real download first; if it fails, generate GBM series with a fat-tailed jump component, np.random.seed(42):
+
+Ticker	Start	Drift	Vol	Days/yr	Notes
+BIL	45.6	2%	0.4%	252	near-flat
+IEF	100	2%	6%	252	2022 drawdown ≈ −18%
+AGG	108	2.5%	5%	252	2022 ≈ −15%
+LQD	115	3%	8%	252	2020 & 2022 stress
+XLI	52	10%	20%	252	−35% COVID
+VNQ	78	7%	22%	252	−40% COVID, −28% 2022
+SPY	200	12%	18%	252	−34% COVID, −25% 2022
+IGV	90	18%	30%	252	−40% 2022, strong 2023–24
+NVDA	5.0	45%	45%	252	strong 2023–24
+GC=F	1180	8%	15%	252	±3% jumps
+BTC-USD	315	55%	70%	365	−65% stretches 2018 & 2022
+
+CSV columns exactly Date,Open,High,Low,Close,Volume. Enforce Low ≤ Open,Close ≤ High, all positive, no NaNs.
+
+7.4 Database schema
+prices         id PK · ticker (idx) · date (idx, UNIQUE(ticker,date))
+               open · high · low · close · volume
+assets         ticker PK · category · bucket · proxy_name · asset_class
+               plain_description · rationale · color · currency
+               calendar · periods_per_year
+backtest_runs  id PK · created_at · short_term_category · long_term_category
+               ticker · strategy · params_json · start_date · end_date
+               initial_capital · metrics_json · equity_json · trades_json
+               simulation_json · verdict_json · summary_json   ← plain-English block
+dna_runs       id PK · created_at · selections_json · stages_json
+               risk_json · dna_card_json · summary_json
+
+Seed assets from the registry on first startup.
+
+7.5 Pydantic models (mirror in lib/types.ts)
+
+Every metric is returned as an object, not a bare number, so the frontend never has to invent wording:
+
+MetricValue     { key, technical_name, plain_label, value, formatted,
+                  unit, rating, tooltip, sentence }
+      rating ∈ "good" | "okay" | "poor" | "neutral"
+      sentence = generated plain-English explanation of THIS value
+
+PlainSummary    { headline, bullets: string[] }   # §2.6
+ChartCaption    { chart_key, caption }            # §2.4
+
+AssetOption     { category, bucket, ticker, proxy_name, asset_class,
+                  plain_description, rationale, color, currency,
+                  calendar, periods_per_year, data_start, data_end }
+PricePoint      { date, open, high, low, close, volume }
+IndicatorSeries { date, close, sma20, sma50, sma200, ema12, ema26, ema50,
+                  daily_return, cum_return, vol20, vol60, drawdown }
+AssetMetrics    { ticker, category, start_date, end_date, n_obs,
+                  metrics: MetricValue[], risk_grade, risk_score,
+                  risk_sentence, summary: PlainSummary }
+DNAStage        { stage, plain_title, technical_name, status, status_line,
+                  detail, metrics: MetricValue[] }
+DNAResult       { stages[], risk_grade, risk_sentence, trend_regime,
+                  volatility_regime, momentum_state, correlation_state,
+                  dna_paragraph, summary: PlainSummary }
+CorrelationMatrix { tickers[], categories[], matrix[][], n_obs,
+                    cell_sentences[][] }
+Trade           { id, side, entry_date, entry_price, exit_date, exit_price,
+                  shares, pnl, pnl_pct, holding_days, entry_cost,
+                  exit_cost, is_open }
+EquityPoint     { date, strategy_equity, benchmark_equity, cash, invested,
+                  position, drawdown }
+SimulationPanel { cash_balance, asset_chosen{...}, trading_cost{...},
+                  entry_price{...}, exit_price{...}, pnl{...},
+                  verdict{ status, score, summary_sentence,
+                           supporting: string[], opposing: string[],
+                           disclaimer } }
+StrategyMetrics { metrics: MetricValue[], raw: {...} }
+RegimeStat      { regime, plain_name, days, pct_of_period,
+                  strategy_return, benchmark_return, strategy_sharpe }
+BacktestResult  { run_id, strategy, strategy_plain_name, params,
+                  summary: PlainSummary, simulation: SimulationPanel,
+                  metrics, benchmark, equity_curve[], trades[], signals[],
+                  regime_performance[], walk_forward{in_sample,out_of_sample,
+                  warning_sentence}, monte_carlo{p5[],p50[],p95[],
+                  prob_positive, sentence},
+                  integrity{ items: string[] },
+                  captions: ChartCaption[] }
+SweepCell       { param1_value, param2_value, sharpe, total_return, max_drawdown }
+7.6 API endpoints (all prefixed /api)
+GET  /api/glossary                       → full §2.2 table
+GET  /api/assets                         → { short_term[], long_term[], reference[] }
+GET  /api/assets/resolve?short_term=&long_term=
+GET  /api/prices/{ticker}?start=&end=
+GET  /api/indicators/{ticker}?start=&end=&sma=20,50,200&ema=12,26,50
+GET  /api/metrics/{ticker}?start=&end=&rf=0.02&benchmark=
+GET  /api/analytics/{ticker}/monthly-returns?start=&end=
+GET  /api/analytics/{ticker}/drawdowns?start=&end=&top=5
+GET  /api/analytics/{ticker}/rolling?window=252&metric=sharpe|return|vol
+POST /api/dna/run                        → DNAResult
+GET  /api/correlation/matrix?tickers=&start=&end=
+GET  /api/correlation/rolling?pair=A,B&window=90&start=&end=
+GET  /api/correlation/scatter?pair=A,B&start=&end=
+GET  /api/regimes/{ticker}?start=&end=
+POST /api/backtest                       → BacktestResult
+POST /api/backtest/compare
+POST /api/backtest/sweep                 (cap grid at 400 cells; 400 above)
+GET  /api/simulation/{run_id}?up_to_trade=N  → SimulationPanel at that point
+GET  /api/backtest/{run_id}/export/trades.csv
+GET  /api/backtest/{run_id}/export/equity.csv
+GET  /api/backtest/{run_id}/export/summary.txt   ← plain-English summary
+POST /api/refresh/{ticker}
+
+404 for unknown ticker/category, 400 for invalid range or oversized sweep. Never 500 on a zero-trade backtest. Every error response includes a friendly_message field the UI displays instead of the status code.
+
+7.7 Strategy definitions + plain descriptions
+
+All strategies output a raw position series in {-1, 0, 1}. The backtester applies position = raw_signal.shift(1) before any P&L. Warm-up NaN rows are dropped first.
+
+Strategy	Plain name shown in dropdown	Plain description	Rule
+SMA Crossover	Trend crossover	Buys when the short-term average price rises above the long-term one, and sells when it falls back below. A classic "ride the trend" approach.	1 when SMA(fast) > SMA(slow), else 0 (or -1 if shorts on)
+EMA Trend	Stay above the line	Buys when the price holds above a smoothed average for a few days in a row, and exits when it drops below.	1 when close > EMA(period) for confirmation_days consecutive days; exit 0 when close < EMA(period)
+Momentum	Buy what's rising	Buys when the price is higher than it was a few months ago, betting that strength continues.	1 when close/close.shift(lookback) - 1 > threshold, else 0 (or -1 if shorts on and momentum < -threshold)
+Mean Reversion	Buy the dips	Buys when the price falls unusually far below its recent normal, betting it bounces back.	Enter 1 when zscore(lookback) < entry_z; exit 0 when zscore >= exit_z. Stateful — carry the position forward
+7.8 Exact formulas (implement these, do not improvise)
+daily_return_t  = close_t / close_{t-1} - 1
+log_return_t    = ln(close_t / close_{t-1})
+cum_return_t    = (1 + daily_return).cumprod() - 1
+ppy             = periods_per_year from the registry (252, or 365 for BTC-USD)
+ann_volatility  = std(daily_return, ddof=1) * sqrt(ppy)
+ann_return      = mean(daily_return) * ppy
+CAGR            = (final/initial)^(ppy / n_obs) - 1
+downside_dev    = std(daily_return[daily_return < 0], ddof=1) * sqrt(ppy)
+sharpe          = (ann_return - rf) / ann_volatility        # rf default 0.02
+sortino         = (ann_return - rf) / downside_dev
+running_max_t   = cummax(equity_t)
+drawdown_t      = equity_t / running_max_t - 1
+max_drawdown    = min(drawdown)
+calmar          = CAGR / abs(max_drawdown)
+rolling_vol(w)  = rolling std(daily_return, w, ddof=1) * sqrt(ppy)
+SMA(n)          = rolling mean of close over n
+EMA(n)          = close.ewm(span=n, adjust=False).mean()
+var_95          = 5th percentile of daily_return
+cvar_95         = mean of daily_return below var_95
+beta            = cov(asset, other) / var(other)
+correlation     = Pearson on aligned daily returns (inner join on date)
+zscore(n)       = (close - SMA(n)) / rolling std(close, n, ddof=1)
+
+Risk Grade:
+
+risk_score = 0.6 * clip(ann_volatility / 0.60, 0, 1)
+           + 0.4 * clip(abs(max_drawdown) / 0.70, 0, 1)
+
+< 0.15 → Very Low · 0.15–0.30 → Low · 0.30–0.50 → Moderate
+0.50–0.70 → High · > 0.70 → Very High
+
+Each grade carries a fixed plain sentence, e.g. Moderate → "Expect meaningful ups and downs, and be ready for a drop of around a quarter at some point."
+
+7.9 Metric rating thresholds (drives the Good/Okay/Poor badge in §2.3)
+sharpe:        > 1.0 good · 0.3–1.0 okay · < 0.3 poor
+sortino:       > 1.5 good · 0.5–1.5 okay · < 0.5 poor
+max_drawdown:  > -15% good · -15% to -35% okay · < -35% poor
+ann_volatility:< 15% good · 15%–35% okay · > 35% poor
+total_return:  > benchmark good · within ±5% of benchmark okay · else poor
+win_rate:      > 55% good · 45%–55% okay · < 45% poor
+profit_factor: > 1.5 good · 1.0–1.5 okay · < 1.0 poor
+calmar:        > 1.0 good · 0.3–1.0 okay · < 0.3 poor
+correlation, beta, skew, kurtosis → always "neutral"
+7.10 Backtest engine rules (non-negotiable)
+Execution price = next bar's open × (1 + slippage_bps/10000) for buys, (1 − slippage_bps/10000) for sells.
+Transaction cost = notional × cost_bps / 10000, charged on entry and exit, deducted from cash.
+shares = floor((equity × position_size_pct/100) / execution_price); remainder stays as cash.
+equity_t = cash + shares × close_t. Record cash and invested at every bar so the cash chart is real.
+Benchmark = buy-and-hold at the first bar's open with identical costs and slippage.
+No leverage unless allow_short is on; shorts limited to 100% of equity notional.
+A trade is recorded only when fully closed. An open position at the end is marked to market and flagged is_open: true.
+Zero trades → return a valid result with an empty ledger, flat equity, verdict DO NOT PROCEED, and the plain sentence "This strategy never found a reason to buy during this period. Try a longer date range or different settings." Never a 500.
+Two-asset blend: simulate each leg independently, combine equity by blend_weight, rebalance monthly.
+7.11 Regime classification (plain names in the UI)
+
+Using trailing data only:
+
+Rising market (Bull): close > SMA(200) and rolling 60d return > 0
+Falling market (Bear): close < SMA(200) and rolling 60d return < 0
+Mixed (Neutral): everything else
+Wild period (High Vol): rolling 20d annualized vol > 75th percentile of the full sample
+Calm period (Low Vol): rolling 20d annualized vol < 25th percentile
+Normal in between
+
+Trend and volatility regimes are computed independently; the UI reports both in plain names.
+
+7.12 Investment Verdict rule engine
+
+Start score = 0. Every rule that fires produces a plain-English bullet citing its real number.
+
+In favour (+): Sharpe > 1.0 → +2 · Sharpe 0.5–1.0 → +1 · beat buy-and-hold → +2 · shallower max drawdown than buy-and-hold → +2 · out-of-sample Sharpe ≥ 70% of in-sample → +2 · Monte Carlo prob_positive > 0.70 → +2 · win rate > 50% → +1 · profit factor > 1.5 → +1 · total costs < 10% of gross P&L → +1
+
+Against (−): Sharpe < 0 → −3 · max drawdown worse than −30% → −2 · out-of-sample Sharpe < 50% of in-sample → −3 · prob_positive < 0.50 → −2 · fewer than 10 trades → −2 · costs > 25% of gross P&L → −2 · underperforms buy-and-hold after costs → −2 · Risk Grade "Very High" → −1
+
+score >= 5      → PROCEED
+score 0 to 4    → PROCEED WITH CAUTION
+score < 0       → DO NOT PROCEED
+
+Always show both lists, plus the one-sentence summary and the verbatim disclaimer from §3.3.
+
+8. STEP-BY-STEP BUILD INSTRUCTIONS
+
+Follow in order. Confirm each step works before continuing.
+
+Step 1 — Scaffold. Create /backend and /frontend per §4. requirements.txt: fastapi, uvicorn[standard], pandas, numpy, scipy, yfinance, sqlalchemy, pydantic, python-dateutil. Install. Scaffold the frontend with npm create vite@latest frontend -- --template react-ts, then install tailwindcss postcss autoprefixer @tanstack/react-query recharts lucide-react react-router-dom date-fns clsx tailwind-merge class-variance-authority. Initialize Tailwind and shadcn/ui. Configure the Vite proxy /api → http://localhost:8000.
+
+Step 2 — Glossary. Write core/glossary.py encoding the full §2.2 table with technical_name, plain_label, tooltip, and direction for every entry. Expose GET /api/glossary. Mirror it in frontend/src/lib/glossary.ts. Verify all 25 entries load.
+
+Step 3 — Asset registry. Write core/asset_registry.py encoding the full §7.2 table — all 4 short-term categories, all 5 long-term categories, 3 reference assets — each with ticker, proxy name, asset class, plain_description, rationale, color, calendar, and periods_per_year. Helper functions get_short_term(), get_long_term(), resolve(category). Print and verify all 9 categories plus 3 references with unique tickers and non-empty plain descriptions.
+
+Step 4 — Seed data. Write backend/scripts/seed_data.py: attempt a real yfinance download for every registry ticker 2015-01-01 → today, writing /backend/data/{ticker}.csv; on failure generate synthetic series per §7.3 with np.random.seed(42). Run it. Verify every CSV exists, has >2000 rows (BTC >3800), no NaNs, and Low ≤ Open,Close ≤ High.
+
+Step 5 — Database. Implement SQLAlchemy models per §7.4. On startup: create tables, seed assets from the registry, load each CSV into prices where that ticker has no rows. Verify row counts with a direct SQLite query.
+
+Step 6 — Data loader. core/data_loader.py with get_prices(ticker, start, end) following the exact three-tier order in §7.3, returning a date-indexed DataFrame sorted ascending, deduplicated, carrying data_source. Also get_aligned_returns(tickers, start, end) inner-joining daily returns on date.
+
+Step 7 — Indicators, metrics, risk grade. Implement core/indicators.py, core/metrics.py (exact §7.8 formulas, ddof=1 everywhere, each ticker's own ppy), and core/risk_grade.py. Sanity script: print metrics for all registry tickers and verify no NaNs, Sharpe within −2 to +3, max drawdown negative, BTC vol clearly above BIL vol, BIL graded Very Low, BTC graded Very High. Fix anything that fails.
+
+Step 8 — The explanation engine (critical). Write core/explain.py exposing:
+
+to_metric_value(key, raw_value, context) -> MetricValue — looks up the glossary entry, formats the number per §2.8, applies the §7.9 rating thresholds, and fills a per-metric sentence template with the real number, real dates, and the correct comparative word.
+build_summary(result) -> PlainSummary — generates the 3–5 bullet §2.6 block for an asset result, a DNA result, and a backtest result (three variants).
+build_captions(result) -> ChartCaption[] — generates the §2.4 caption for every chart key used in the app.
+verdict_bullets(metrics) -> (supporting[], opposing[]) — the §7.12 engine, emitting plain-English bullets that cite real numbers.
+
+No hardcoded prose anywhere. Every string is a template filled from computed values. Test: run it on two very different assets (BIL and NVDA) and confirm the generated sentences differ appropriately and read naturally. Read them aloud — if a sentence would confuse a non-finance friend, rewrite it.
+
+Step 9 — Strategies. core/strategies.py with generate_signals(df, strategy, params) -> pd.Series covering all four per §7.7. Mean Reversion must be stateful. Return raw signals — do not shift here.
+
+Step 10 — Backtester, regimes, Monte Carlo, verdict. core/backtester.py per every rule in §7.10: drop warm-up rows, shift signals by 1 bar, simulate bar by bar, track cash/shares/invested/equity, build the trade ledger with per-side costs, compute strategy and buy-and-hold metrics through metrics.py. Then core/regimes.py (§7.11) with plain names plus regime_performance(); core/montecarlo.py (1,000 bootstrap resamples of per-trade returns → p5/p50/p95 paths, prob_positive, and a generated sentence); the walk-forward 70/30 split with a generated warning sentence; and core/verdict.py assembling the full SimulationPanel. Wrap every metric through explain.to_metric_value so the API returns objects, not bare floats. Test: raising cost_bps 0 → 100 must measurably reduce return; a deliberately bad parameter set must flip the verdict away from PROCEED.
+
+Step 11 — API routes. Implement every endpoint in §7.6 with pydantic models, validation, and friendly errors carrying friendly_message. Enable CORS in dev. Persist backtest runs (including simulation_json, verdict_json, summary_json) and DNA runs, returning IDs so exports and the /simulation scrubber work. Hit every endpoint and confirm each returns MetricValue objects with a non-empty plain_label, sentence, and rating.
+
+Step 12 — Frontend foundation. Tailwind theme with the §6 variables; load Inter and JetBrains Mono; install the shadcn components from §4. Build: AppShell (sidebar + global control bar), SelectionContext (both categories, date range, Simple/Expert mode — persisted to localStorage), lib/api.ts (typed wrappers), lib/types.ts, lib/glossary.ts. Then the shared components — and these five carry the clarity system, so build them carefully:
+
+MetricCard — renders the exact 4-part structure in §2.3, switching label style on mode.
+ChartCard — chart plus the §2.4 caption strip underneath.
+PlainSummary — the §2.6 bullet block.
+GlossaryTerm — dotted-underline term with a tooltip/popover.
+ExplainPageButton — the §2.5 "What am I looking at?" dialog.
+Plus AssetDropdown, ModeToggle, LoadingSkeleton, EmptyState, CustomTooltip, DataTable, CountUpNumber, RiskGradeGauge, VerdictCard. Wrap in QueryClientProvider and configure routing.
+
+Step 13 — Mode toggle and dropdowns. Implement the Simple/Expert toggle per §2.1 and wire it into MetricCard, ChartCard, tables, and tab contents. Build both dropdowns from /api/assets: Dropdown A with exactly the 4 short-term categories plus "— None —", Dropdown B with exactly the 5 long-term categories plus "— None —" plus a Reference group; each option showing its plain_description; proxy caption underneath; A colored --short-term, B --long-term; "Comparing 2 assets" badge when both are set. Verify all 9 categories load real data end to end in both modes.
+
+Step 14 — Page 1: Overview. Build / per §5, including the first-run 3-step panel and the "Try an example" button that pre-fills Long-Term Investments and runs the full pipeline in one click. Plain Summary block first, then metric cards, then the captioned charts with regime bands (Recharts ReferenceArea) and base-100 normalization in two-asset mode. Verify across all 9 categories and all 4 date presets, in both modes.
+
+Step 15 — Page 2: Strategy DNA. Build /dna: the animated 4-stage stepper with plain titles and live status lines, the Stage 3 Risk Panel with the radial gauge and its plain sentence, the Stage 4 DNA Card with its generated paragraph, and the "Test a strategy on this →" handoff carrying the selection through.
+
+Step 16 — Page 3: Deep Dive. Build /analytics with the four plain-named tabs. The monthly heatmap must be a CSS grid of colored cells (years × Jan–Dec, intensity by absolute return, value printed) — not a chart-library component. In Simple Mode show only the first chart per tab plus a "Show more charts" accordion.
+
+Step 17 — Page 4: Relationships. Build /correlation: CSS-grid matrix heatmap with plain per-cell sentences, selected pair outlined in --accent, rolling correlation chart with a zero line, scatter with an OLS line (R² in Expert Mode only), and generated insight sentences.
+
+Step 18 — Page 5: Test a Strategy. Build /backtest per §5 — the most important page, so spend the most effort here. Results must appear in the exact order listed: Plain Summary block, then the Portfolio Simulation panel with the big verdict pill, then everything else. Every slider gets its plain caption. Test all four strategies against all nine categories: none may crash, none may return NaN, and the zero-trade case must render a friendly message and a valid verdict.
+
+Step 19 — Page 6: Simulation. Build /simulation as the full-width panel with the trade-by-trade scrubber wired to /api/simulation/{run_id}?up_to_trade=N, updating every field plus the live plain sentence as it moves.
+
+Step 20 — Page 7: Strategy Lab. Build /compare: the 5-series equity chart, the sortable leaderboard with the winner tagged and explained, and the sweep heatmap with its plain warning caption and click-through into /backtest.
+
+Step 21 — Page 8: How it works. Build /about with the full mapping table and rationale, the searchable glossary rendering all of §2.2, the collapsed formula section, the verdict engine explained in plain English, bias mitigations, data sources, and the disclaimer.
+
+Step 22 — Presets. Implement the four plain-named preset scenarios in the backtest config panel; each sets categories, dates, strategy, and parameters in one action and runs immediately.
+
+Step 23 — Clarity pass (do not skip). Walk through every single screen in Simple Mode and check:
+
+No bare metric name appears without its plain label.
+No number appears without a sentence or caption nearby.
+No chart appears without a "what this means" caption.
+No raw float, NaN, null, undefined, Infinity, or error code is visible anywhere — — with a tooltip instead.
+Every page's "What am I looking at?" dialog has real, friendly, non-technical copy.
+Every generated sentence reads like a person wrote it. Rewrite any that don't.
+
+Step 24 — Polish. Toasts, count-up animations, skeletons on every async surface, error boundaries showing friendly_message, the "Using saved data" badge when data_source === "bundled", the footer disclaimer, and responsive behavior down to 390px. No layout shift on load, no console errors.
+
+Step 25 — Production wiring. Build the frontend, mount frontend/dist in FastAPI as static files with an SPA catch-all so deep links work, and configure Replit to launch both processes with one command. Confirm the app works from a single URL.
+
+Step 26 — Final verification checklist.
+
+ A first-time user can land on /, press "Try an example", and get a full plain-English result in one click
+ Simple/Expert toggle works and changes every page's density
+ Every metric card shows: plain label, number, rating badge, explanatory sentence
+ Every chart has a "what this means" caption generated from real data
+ Overview, DNA, and Backtest each open with a Plain-English Summary block before any chart
+ The Investment Verdict shows a clear pill, a summary sentence, reasons in favour, reasons against, and the disclaimer
+ Every verdict bullet cites a real computed number
+ "What am I looking at?" works on all 8 pages with real copy
+ Jargon terms are clickable and show glossary definitions
+ Two dropdowns present everywhere with exactly the 4 short-term and 5 long-term categories, each with a plain description
+ App loads with real data on first run with no network access
+ Strategy DNA runs all four stages in visible sequence with plain titles
+ Portfolio Simulation shows all seven fields with plain labels
+ All 4 strategies run on all 9 categories with no NaN and no crash
+ Signals are shifted by 1 bar (verify in the code path)
+ Raising fees from 0 to 100 bps measurably reduces returns
+ Walk-forward, Monte Carlo, regime table, and sweep heatmap all populate
+ /simulation scrubber updates every field and its live sentence
+ CSV and plain-text summary exports download valid files
+ No console errors and no unexplained numbers anywhere in the UI
+ Responsive at 390px, 768px, and 1440px
+ Disclaimer visible on Overview, in the verdict, and in the footer

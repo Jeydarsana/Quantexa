@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "QuantLens"
+description = "A plain-English financial analysis app that lets beginners and experts compare asset proxies, understand risk, and test trading strategies with real computed metrics."
+version = "1.0.0"
+id = "artifacts/quantlens"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23229
+
+[services.development]
+run = "pnpm --filter @workspace/quantlens run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/quantlens", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/quantlens/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23229"
+BASE_PATH = "/"

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: quantlens
+    description: QuantLens analysis operations
 paths:
   /healthz:
     get:
@@ -24,7 +26,181 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /assets:
+    get:
+      operationId: getAssets
+      tags: [quantlens]
+      summary: List available asset proxies
+      responses:
+        "200":
+          description: Asset catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetCatalog"
+  /glossary:
+    get:
+      operationId: getGlossary
+      tags: [quantlens]
+      summary: Get plain-English metric glossary
+      responses:
+        "200":
+          description: Glossary terms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GlossaryTerm"
+  /analysis/overview:
+    get:
+      operationId: getOverview
+      tags: [quantlens]
+      summary: Get overview analysis for selected assets
+      parameters:
+        - $ref: "#/components/parameters/Ticker"
+        - name: compareTicker
+          in: query
+          schema:
+            type: string
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+      responses:
+        "200":
+          description: Overview analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverviewResult"
+  /dna/run:
+    post:
+      operationId: runDna
+      tags: [quantlens]
+      summary: Run the Strategy DNA analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalysisInput"
+      responses:
+        "200":
+          description: DNA result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DnaResult"
+  /backtest:
+    post:
+      operationId: runBacktest
+      tags: [quantlens]
+      summary: Test a trading strategy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BacktestInput"
+      responses:
+        "200":
+          description: Backtest result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BacktestResult"
+  /analytics:
+    get:
+      operationId: getAnalytics
+      tags: [quantlens]
+      summary: Get chart-ready analytics
+      parameters:
+        - $ref: "#/components/parameters/Ticker"
+      responses:
+        "200":
+          description: Analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsResult"
+  /correlation:
+    get:
+      operationId: getCorrelation
+      tags: [quantlens]
+      summary: Get relationship analysis
+      parameters:
+        - name: tickers
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Correlation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrelationResult"
+  /compare:
+    post:
+      operationId: compareStrategies
+      tags: [quantlens]
+      summary: Compare all strategies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompareInput"
+      responses:
+        "200":
+          description: Strategy comparison
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompareResult"
+  /simulation/{runId}:
+    get:
+      operationId: getSimulation
+      tags: [quantlens]
+      summary: Scrub a saved simulation
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: trade
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Simulation state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulationResult"
 components:
+  parameters:
+    Ticker:
+      name: ticker
+      in: query
+      required: true
+      schema:
+        type: string
+    StartDate:
+      name: start
+      in: query
+      schema:
+        type: string
+        format: date
+    EndDate:
+      name: end
+      in: query
+      schema:
+        type: string
+        format: date
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +209,289 @@ components:
           type: string
       required:
         - status
+    Asset:
+      type: object
+      required: [category, bucket, ticker, proxyName, assetClass, description, rationale, color]
+      properties:
+        category: { type: string }
+        bucket: { type: string }
+        ticker: { type: string }
+        proxyName: { type: string }
+        assetClass: { type: string }
+        description: { type: string }
+        rationale: { type: string }
+        color: { type: string }
+    AssetCatalog:
+      type: object
+      required: [shortTerm, longTerm, reference]
+      properties:
+        shortTerm:
+          type: array
+          items: { $ref: "#/components/schemas/Asset" }
+        longTerm:
+          type: array
+          items: { $ref: "#/components/schemas/Asset" }
+        reference:
+          type: array
+          items: { $ref: "#/components/schemas/Asset" }
+    GlossaryTerm:
+      type: object
+      required: [technicalName, plainLabel, tooltip, direction]
+      properties:
+        technicalName: { type: string }
+        plainLabel: { type: string }
+        tooltip: { type: string }
+        direction: { type: string }
+    Metric:
+      type: object
+      required: [key, technicalName, plainLabel, value, formatted, unit, rating, tooltip, sentence]
+      properties:
+        key: { type: string }
+        technicalName: { type: string }
+        plainLabel: { type: string }
+        value: { type: number }
+        formatted: { type: string }
+        unit: { type: string }
+        rating: { type: string }
+        tooltip: { type: string }
+        sentence: { type: string }
+    Summary:
+      type: object
+      required: [headline, bullets]
+      properties:
+        headline: { type: string }
+        bullets:
+          type: array
+          items: { type: string }
+    ChartPoint:
+      type: object
+      required: [date, value]
+      properties:
+        date: { type: string }
+        value: { type: number }
+        secondary: { type: number }
+    AnalysisInput:
+      type: object
+      required: [ticker]
+      properties:
+        ticker: { type: string }
+        compareTicker: { type: string }
+        start: { type: string }
+        end: { type: string }
+    BacktestInput:
+      allOf:
+        - $ref: "#/components/schemas/AnalysisInput"
+        - type: object
+          required: [strategy]
+          properties:
+            strategy: { type: string }
+            fast: { type: integer }
+            slow: { type: integer }
+            capital: { type: number }
+            feeBps: { type: number }
+            slippageBps: { type: number }
+    CompareInput:
+      allOf:
+        - $ref: "#/components/schemas/AnalysisInput"
+        - type: object
+          properties:
+            capital: { type: number }
+    OverviewResult:
+      type: object
+      required: [asset, compareAsset, summary, metrics, series, quickFacts, dataSource]
+      properties:
+        asset: { $ref: "#/components/schemas/Asset" }
+        compareAsset:
+          oneOf:
+            - $ref: "#/components/schemas/Asset"
+            - type: "null"
+        summary: { $ref: "#/components/schemas/Summary" }
+        metrics:
+          type: array
+          items: { $ref: "#/components/schemas/Metric" }
+        compareMetrics:
+          type: array
+          items: { $ref: "#/components/schemas/Metric" }
+        series:
+          type: array
+          items: { $ref: "#/components/schemas/ChartPoint" }
+        compareSeries:
+          type: array
+          items: { $ref: "#/components/schemas/ChartPoint" }
+        quickFacts:
+          type: array
+          items:
+            type: object
+            required: [label, value, detail]
+            properties:
+              label: { type: string }
+              value: { type: string }
+              detail: { type: string }
+        dataSource: { type: string }
+    DnaResult:
+      type: object
+      required: [stages, riskGrade, riskScore, riskSentence, trend, volatility, momentum, correlation, paragraph, summary]
+      properties:
+        stages:
+          type: array
+          items:
+            type: object
+            required: [title, technical, status, detail]
+            properties:
+              title: { type: string }
+              technical: { type: string }
+              status: { type: string }
+              detail: { type: string }
+        riskGrade: { type: string }
+        riskScore: { type: number }
+        riskSentence: { type: string }
+        trend: { type: string }
+        volatility: { type: string }
+        momentum: { type: string }
+        correlation: { type: string }
+        paragraph: { type: string }
+        summary: { $ref: "#/components/schemas/Summary" }
+    BacktestResult:
+      type: object
+      required: [runId, strategy, strategyName, summary, verdict, metrics, benchmark, equity, trades, integrity, walkForward, monteCarlo]
+      properties:
+        runId: { type: string }
+        strategy: { type: string }
+        strategyName: { type: string }
+        summary: { $ref: "#/components/schemas/Summary" }
+        verdict:
+          type: object
+          required: [status, score, sentence, supporting, opposing, disclaimer]
+          properties:
+            status: { type: string }
+            score: { type: integer }
+            sentence: { type: string }
+            supporting:
+              type: array
+              items: { type: string }
+            opposing:
+              type: array
+              items: { type: string }
+            disclaimer: { type: string }
+        metrics:
+          type: array
+          items: { $ref: "#/components/schemas/Metric" }
+        benchmark:
+          type: object
+          required: [return, drawdown]
+          properties:
+            return: { type: string }
+            drawdown: { type: string }
+        equity:
+          type: array
+          items:
+            type: object
+            required: [date, strategy, benchmark, invested]
+            properties:
+              date: { type: string }
+              strategy: { type: number }
+              benchmark: { type: number }
+              invested: { type: number }
+        trades:
+          type: array
+          items:
+            type: object
+            required: [id, side, date, price, pnl, result]
+            properties:
+              id: { type: integer }
+              side: { type: string }
+              date: { type: string }
+              price: { type: number }
+              pnl: { type: number }
+              result: { type: string }
+        integrity:
+          type: array
+          items: { type: string }
+        walkForward:
+          type: object
+          required: [inSample, outOfSample, sentence]
+          properties:
+            inSample: { type: string }
+            outOfSample: { type: string }
+            sentence: { type: string }
+        monteCarlo:
+          type: object
+          required: [probability, sentence]
+          properties:
+            probability: { type: number }
+            sentence: { type: string }
+    AnalyticsResult:
+      type: object
+      required: [returns, volatility, drawdown, rolling, monthly]
+      properties:
+        returns:
+          type: array
+          items: { $ref: "#/components/schemas/ChartPoint" }
+        volatility:
+          type: array
+          items: { $ref: "#/components/schemas/ChartPoint" }
+        drawdown:
+          type: array
+          items: { $ref: "#/components/schemas/ChartPoint" }
+        rolling:
+          type: array
+          items: { $ref: "#/components/schemas/ChartPoint" }
+        monthly:
+          type: array
+          items:
+            type: object
+            required: [month, value]
+            properties:
+              month: { type: string }
+              value: { type: number }
+    CorrelationResult:
+      type: object
+      required: [assets, value, sentence, rolling, scatter]
+      properties:
+        assets:
+          type: array
+          items: { type: string }
+        value: { type: number }
+        sentence: { type: string }
+        rolling:
+          type: array
+          items: { $ref: "#/components/schemas/ChartPoint" }
+        scatter:
+          type: array
+          items: { $ref: "#/components/schemas/ChartPoint" }
+    CompareResult:
+      type: object
+      required: [series, leaderboard, winner]
+      properties:
+        series:
+          type: array
+          items:
+            type: object
+            required: [date, strategy, value]
+            properties:
+              date: { type: string }
+              strategy: { type: string }
+              value: { type: number }
+        leaderboard:
+          type: array
+          items:
+            type: object
+            required: [strategy, return, risk, trades, sentence]
+            properties:
+              strategy: { type: string }
+              return: { type: string }
+              risk: { type: string }
+              trades: { type: integer }
+              sentence: { type: string }
+        winner: { type: string }
+    SimulationResult:
+      type: object
+      required: [tradeNumber, date, cash, invested, pnl, sentence]
+      properties:
+        tradeNumber: { type: integer }
+        date: { type: string }
+        cash: { type: number }
+        invested: { type: number }
+        pnl: { type: number }
+        sentence: { type: string }
 
