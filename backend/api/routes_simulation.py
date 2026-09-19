@@ -211,10 +211,10 @@ def run_strategy_dna_simulation(req: SimulationDNARequest):
                 "Price": float(closes[i]),
                 "Daily_Return": float(clean_df['Daily_Return'].iloc[i]) if 'Daily_Return' in clean_df.columns and pd.notna(clean_df['Daily_Return'].iloc[i]) else 0.0
             }
-            if 'MA20' in indicators_df.columns and pd.notna(indicators_df['MA20'].iloc[i]):
-                record["MA20"] = float(indicators_df['MA20'].iloc[i])
-            if 'MA50' in indicators_df.columns and pd.notna(indicators_df['MA50'].iloc[i]):
-                record["MA50"] = float(indicators_df['MA50'].iloc[i])
+            if 'SMA_Short' in indicators_df.columns and pd.notna(indicators_df['SMA_Short'].iloc[i]):
+                record["MA20"] = float(indicators_df['SMA_Short'].iloc[i])
+            if 'SMA_Long' in indicators_df.columns and pd.notna(indicators_df['SMA_Long'].iloc[i]):
+                record["MA50"] = float(indicators_df['SMA_Long'].iloc[i])
             chart_records.append(record)
 
         return {
