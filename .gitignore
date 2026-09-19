@@ -10,6 +10,17 @@ out-tsc
 
 # dependencies
 node_modules
+.pnpm-store/
+
+# Replit & Environment configurations
+.replit
+.replitignore
+.apt-packages
+.config/
+.cache/
+*.env
+*.env.*
+!.env.example
 
 # IDEs and editors
 /.idea
@@ -47,3 +58,8 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+# Build and IDE outputs
+dist/
+build/
+.artifacts/
+attached_assets/
