@@ -1,30 +1,14 @@
-import time
-from google import genai
-from groq import Groq
 from openai import OpenAI
-from core.config import settings
 
-_cooldowns = {}
-COOLDOWN_SECONDS = 60
-
-def _is_key_available(key: str) -> bool:
-    if not key:
-        return False
-    if key in _cooldowns:
-        if time.time() < _cooldowns[key]:
-            return False
-        else:
-            del _cooldowns[key] # Cooldown expired
-    return True
-
-def _burn_key(key: str):
-    if key:
-        _cooldowns[key] = time.time() + COOLDOWN_SECONDS
+def _get_ollama_client():
+    return OpenAI(
+        base_url="http://localhost:11434/v1",
+        api_key="ollama" # required but ignored by ollama
+    )
 
 def get_ai_explanation(backtest_results: dict) -> str:
     """
-    Structured AI explanation service that automatically fails over
-    between Gemini, Groq, and OpenRouter with rate-limit cooldowns.
+    Structured AI explanation service that uses local Ollama Qwen.
     """
     metrics = backtest_results.get("metrics", {})
     if "strategy" in metrics:
@@ -50,75 +34,19 @@ def get_ai_explanation(backtest_results: dict) -> str:
     Provide a concise explanation highlighting the risk-reward tradeoff.
     """
     
-    errors = []
-
-    # 1. Try Gemini
-    for key in settings.get_gemini_keys():
-        if not _is_key_available(key):
-            errors.append("Gemini key cooling down")
-            continue
-        try:
-            client = genai.Client(api_key=key)
-            response = client.models.generate_content(
-                model='gemini-3.1-pro-preview',
-                contents=prompt,
-            )
-            return response.text
-        except Exception as e:
-            err_str = str(e).lower()
-            errors.append(f"Gemini: {err_str}")
-            if "429" in err_str or "exhausted" in err_str or "503" in err_str or "500" in err_str:
-                _burn_key(key)
-
-    # 2. Try Groq
-    for key in settings.get_groq_keys():
-        if not _is_key_available(key):
-            errors.append("Groq key cooling down")
-            continue
-        try:
-            client = Groq(api_key=key)
-            response = client.chat.completions.create(
-                messages=[{"role": "user", "content": prompt}],
-                model="llama3-70b-8192"
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            err_str = str(e).lower()
-            errors.append(f"Groq: {err_str}")
-            if "429" in err_str or "exhausted" in err_str or "503" in err_str or "500" in err_str:
-                _burn_key(key)
-
-    # 3. Try OpenRouter
-    for key in settings.get_openrouter_keys():
-        if not _is_key_available(key):
-            errors.append("OpenRouter key cooling down")
-            continue
-        try:
-            client = OpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=key,
-            )
-            response = client.chat.completions.create(
-                model="meta-llama/llama-3-8b-instruct:free",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            err_str = str(e).lower()
-            errors.append(f"OpenRouter: {err_str}")
-            if "429" in err_str or "exhausted" in err_str or "503" in err_str or "500" in err_str:
-                _burn_key(key)
-            
-    if not errors:
-        return "AI explanation is unavailable because no API keys were configured."
-        
-    error_summary = " | ".join(errors)
-    return f"AI explanation failed. All configured providers were exhausted or rate limited. Details: {error_summary}"
+    try:
+        client = _get_ollama_client()
+        response = client.chat.completions.create(
+            model="qwen2.5:3b",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content or "AI explanation unavailable."
+    except Exception as e:
+        return f"AI explanation failed. Ensure Ollama is running with qwen2.5:3b. Details: {e}"
 
 def get_macro_explanation(payload: dict) -> str:
     """
-    Structured AI explanation service for macroeconomics module.
-    Automatically fails over between Gemini, Groq, and OpenRouter.
+    Structured AI explanation service for macroeconomics module using local Ollama Qwen.
     """
     submodule = payload.get("submodule", "unknown")
     inputs = payload.get("inputs", {})
@@ -139,67 +67,12 @@ def get_macro_explanation(payload: dict) -> str:
     Use Markdown formatting.
     """
     
-    errors = []
-
-    # 1. Try Gemini
-    for key in settings.get_gemini_keys():
-        if not _is_key_available(key):
-            errors.append("Gemini key cooling down")
-            continue
-        try:
-            client = genai.Client(api_key=key)
-            response = client.models.generate_content(
-                model='gemini-3.1-pro-preview',
-                contents=prompt,
-            )
-            return response.text
-        except Exception as e:
-            err_str = str(e).lower()
-            errors.append(f"Gemini: {err_str}")
-            if "429" in err_str or "exhausted" in err_str or "503" in err_str or "500" in err_str:
-                _burn_key(key)
-
-    # 2. Try Groq
-    for key in settings.get_groq_keys():
-        if not _is_key_available(key):
-            errors.append("Groq key cooling down")
-            continue
-        try:
-            client = Groq(api_key=key)
-            response = client.chat.completions.create(
-                messages=[{"role": "user", "content": prompt}],
-                model="llama3-70b-8192"
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            err_str = str(e).lower()
-            errors.append(f"Groq: {err_str}")
-            if "429" in err_str or "exhausted" in err_str or "503" in err_str or "500" in err_str:
-                _burn_key(key)
-
-    # 3. Try OpenRouter
-    for key in settings.get_openrouter_keys():
-        if not _is_key_available(key):
-            errors.append("OpenRouter key cooling down")
-            continue
-        try:
-            client = OpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=key,
-            )
-            response = client.chat.completions.create(
-                model="meta-llama/llama-3-8b-instruct:free",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            err_str = str(e).lower()
-            errors.append(f"OpenRouter: {err_str}")
-            if "429" in err_str or "exhausted" in err_str or "503" in err_str or "500" in err_str:
-                _burn_key(key)
-            
-    if not errors:
-        return "AI explanation is unavailable because no API keys were configured."
-        
-    error_summary = " | ".join(errors)
-    return f"AI explanation failed. All configured providers were exhausted or rate limited. Details: {error_summary}"
+    try:
+        client = _get_ollama_client()
+        response = client.chat.completions.create(
+            model="qwen2.5:3b",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content or "AI explanation unavailable."
+    except Exception as e:
+        return f"AI explanation failed. Ensure Ollama is running with qwen2.5:3b. Details: {e}"
