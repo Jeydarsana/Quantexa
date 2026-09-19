@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Activity } from 'lucide-react';
+import { Network, Activity, HelpCircle } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { useMode } from '../contexts/ModeContext';
+import GlossaryTerm from '../components/GlossaryTerm';
 
 export default function CrossAsset() {
   const [startDate, setStartDate] = useState('2020-01-01');
@@ -14,6 +16,7 @@ export default function CrossAsset() {
   const [rollingData, setRollingData] = useState<any[]>([]);
   const [loadingMatrix, setLoadingMatrix] = useState(false);
   const [loadingRolling, setLoadingRolling] = useState(false);
+  const { isSimpleMode } = useMode();
 
   const fetchMatrix = async () => {
     setLoadingMatrix(true);
@@ -96,6 +99,14 @@ export default function CrossAsset() {
         {/* Correlation Matrix */}
         <div className="card lg:col-span-1">
           <h2 className="text-lg font-semibold mb-4">Correlation Matrix</h2>
+          
+          {isSimpleMode && matrix.length > 0 && (
+            <div className="bg-surfaceHover border border-border rounded-lg p-3 mb-4 text-sm text-textMuted flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-accent flex-shrink-0" />
+              <span><strong>What this means:</strong> A heatmap showing how strongly assets move together. <span className="text-secondary font-bold">1.0</span> means they move perfectly together, <span className="text-danger font-bold">-1.0</span> means they move opposite to each other.</span>
+            </div>
+          )}
+
           {loadingMatrix ? (
             <div className="h-64 flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -129,7 +140,14 @@ export default function CrossAsset() {
         {/* Rolling Correlation */}
         <div className="card lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Rolling Correlation ({assetA} vs {assetB})</h2>
+            <h2 className="text-lg font-semibold">
+              <GlossaryTerm 
+                term={`Rolling Correlation (${assetA} vs ${assetB})`}
+                simpleLabel={`Relationship Over Time`}
+                definition={`Measures how the relationship between ${assetA} and ${assetB} has evolved dynamically over the selected window size.`}
+                isSimpleMode={isSimpleMode}
+              />
+            </h2>
             <select 
               value={windowSize} 
               onChange={(e) => { setWindowSize(Number(e.target.value)); setTimeout(fetchRolling, 0); }}
@@ -140,6 +158,13 @@ export default function CrossAsset() {
               <option value={90}>90 Days</option>
             </select>
           </div>
+          
+          {isSimpleMode && rollingData.length > 0 && (
+            <div className="bg-surfaceHover border border-border rounded-lg p-3 mb-4 text-sm text-textMuted flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-accent flex-shrink-0" />
+              <span><strong>What this means:</strong> This shows how the relationship between these assets has changed over time. If the line drops below zero, they started moving in opposite directions!</span>
+            </div>
+          )}
           
           <div className="w-full flex-1 min-h-[300px]">
             {loadingRolling ? (

@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Activity, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Zap, Info } from 'lucide-react';
+import { useMode } from '../contexts/ModeContext';
+import GlossaryTerm from '../components/GlossaryTerm';
 
 export default function Overview() {
   const [summary, setSummary] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isSimpleMode } = useMode();
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -30,6 +33,16 @@ export default function Overview() {
           <p className="text-textMuted text-sm">Real-time macro dashboard and asset snapshot.</p>
         </div>
       </div>
+      
+      {isSimpleMode && (
+        <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-4 text-sm text-textMuted flex items-start gap-3">
+          <Info className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+          <div className="leading-relaxed">
+            <strong className="text-white block mb-1">Welcome to QuantLens Simple Mode!</strong>
+            The platform is currently running in <em>Jargon Free</em> mode. Complex financial metrics have been translated into plain English, and "What this means" guide panels will appear beneath charts to help you understand the data. To return to the standard quantitative layout, toggle the switch in the top right.
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -50,7 +63,12 @@ export default function Overview() {
                     {asset.regime === 'Bullish' && <TrendingUp className="w-3 h-3" />}
                     {asset.regime === 'Bearish' && <TrendingDown className="w-3 h-3" />}
                     {asset.regime === 'Sideways' && <Activity className="w-3 h-3" />}
-                    {asset.regime} Regime
+                    <GlossaryTerm 
+                      term={`${asset.regime} Regime`}
+                      simpleLabel={asset.regime === 'Bullish' ? 'Uptrend' : asset.regime === 'Bearish' ? 'Downtrend' : 'Sideways Trend'}
+                      definition="The current overarching mathematical direction of the asset."
+                      isSimpleMode={isSimpleMode}
+                    />
                   </div>
                 </div>
                 <div className="text-right">

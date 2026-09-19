@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Activity, TrendingUp, AlertTriangle, Cpu, List } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import ControlPanel from '../components/ControlPanel';
+import { useMode } from '../contexts/ModeContext';
+import GlossaryTerm from '../components/GlossaryTerm';
 
 export default function StrategyLab() {
   const [loading, setLoading] = useState(false);
@@ -9,6 +11,7 @@ export default function StrategyLab() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [tradeLog, setTradeLog] = useState<any[]>([]);
   const [explanation, setExplanation] = useState<string>('');
+  const { isSimpleMode } = useMode();
   
   const handleRunBacktest = async (params: any) => {
     setLoading(true);
@@ -54,6 +57,7 @@ export default function StrategyLab() {
             strategy={metrics?.strategy.total_return}
             benchmark={metrics?.benchmark.total_return}
             icon={<TrendingUp className="text-secondary" />} 
+            isSimpleMode={isSimpleMode}
           />
           <MetricCard 
             title="Sharpe Ratio" 
@@ -61,12 +65,14 @@ export default function StrategyLab() {
             benchmark={metrics?.benchmark.sharpe_ratio}
             icon={<Activity className="text-primary" />} 
             isRatio
+            isSimpleMode={isSimpleMode}
           />
           <MetricCard 
             title="Max Drawdown" 
             strategy={metrics?.strategy.max_drawdown}
             benchmark={metrics?.benchmark.max_drawdown}
             icon={<AlertTriangle className="text-danger" />} 
+            isSimpleMode={isSimpleMode}
           />
         </div>
         
@@ -75,6 +81,13 @@ export default function StrategyLab() {
             <Activity className="w-5 h-5 text-primary" />
             Equity Curve
           </h2>
+          
+          {isSimpleMode && (
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4 text-sm text-textMuted leading-relaxed">
+              <strong className="text-white">What this means:</strong> The green line shows how your money would have grown (or shrunk) if you traded this strategy. The purple line shows what would have happened if you just bought and held the asset without trading.
+            </div>
+          )}
+          
           <div className="flex-1 relative">
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -162,7 +175,7 @@ export default function StrategyLab() {
   );
 }
 
-function MetricCard({ title, strategy, benchmark, icon, isRatio = false }: any) {
+function MetricCard({ title, strategy, benchmark, icon, isRatio = false, isSimpleMode = false }: any) {
   if (strategy === undefined) {
     return (
       <div className="card flex items-center justify-between">
@@ -179,7 +192,14 @@ function MetricCard({ title, strategy, benchmark, icon, isRatio = false }: any) 
   return (
     <div className="card">
       <div className="flex justify-between items-start mb-2">
-        <p className="text-sm font-medium text-textMuted">{title}</p>
+        <p className="text-sm font-medium text-textMuted">
+          <GlossaryTerm 
+            term={title}
+            simpleLabel={title === 'Total Return' ? 'Total Profit' : title === 'Sharpe Ratio' ? 'Risk-Adjusted Score' : 'Worst Case Drop'}
+            definition={title === 'Total Return' ? 'The total percentage of money made (or lost) over the entire time period.' : title === 'Sharpe Ratio' ? 'Measures return compared to the risk taken. Above 1.0 is good, below 0 is bad.' : 'The biggest single drop from a high point to a low point. Shows how much pain you might endure.'}
+            isSimpleMode={isSimpleMode}
+          />
+        </p>
         <div className="p-2 bg-surfaceHover rounded-lg">{icon}</div>
       </div>
       <div className="flex items-end gap-3">

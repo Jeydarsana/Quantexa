@@ -7,6 +7,7 @@ import Overview from './pages/Overview';
 import Robustness from './pages/Robustness';
 import Intelligence from './pages/Intelligence';
 import PlaceholderPage from './pages/PlaceholderPage';
+import { useMode } from './contexts/ModeContext';
 
 function App() {
   const tabs = [
@@ -18,6 +19,8 @@ function App() {
     { name: 'Regimes', path: '/regimes' },
     { name: 'Intelligence', path: '/intelligence' },
   ];
+
+  const { isSimpleMode, toggleMode } = useMode();
 
   return (
     <BrowserRouter>
@@ -34,9 +37,25 @@ function App() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-sm text-textMuted flex items-center gap-2">
+              <div className="text-sm text-textMuted flex items-center gap-2 mr-4 border-r border-border pr-4">
                 <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
                 API Connected
+              </div>
+              
+              {/* Mode Toggle */}
+              <div className="flex items-center gap-2 bg-surface border border-border rounded-full p-1">
+                <button 
+                  onClick={() => !isSimpleMode && toggleMode()}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${!isSimpleMode ? 'bg-primary text-white' : 'text-textMuted hover:text-white'}`}
+                >
+                  Expert
+                </button>
+                <button 
+                  onClick={() => isSimpleMode && toggleMode()}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${isSimpleMode ? 'bg-secondary text-background' : 'text-textMuted hover:text-white'}`}
+                >
+                  Jargon Free
+                </button>
               </div>
             </div>
           </div>
