@@ -58,8 +58,12 @@ def detect_anomalies(df: pd.DataFrame, window: int = 60, threshold: float = 3.0)
     rolling_mean = df['Daily_Return'].rolling(window=window).mean()
     rolling_std = df['Daily_Return'].rolling(window=window).std()
     
-    # Avoid division by zero
-    df['Z_Score'] = np.where(rolling_std > 0, (df['Daily_Return'] - rolling_mean) / rolling_std, 0)
+    # Avoid division by near-zero which causes insane math blowups (e.g., 71 million Z-Scores)
+    epsilon = 1e-6
+    df['Z_Score'] = np.where(rolling_std > epsilon, (df['Daily_Return'] - rolling_mean) / rolling_std, 0)
+    
+    # Clip Z-score to a realistic range to prevent chart breaking
+    df['Z_Score'] = df['Z_Score'].clip(lower=-10, upper=10)
     
     # Flag anomaly if |Z-Score| > threshold
     df['Is_Anomaly'] = np.abs(df['Z_Score']) > threshold

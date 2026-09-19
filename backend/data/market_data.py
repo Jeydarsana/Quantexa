@@ -13,11 +13,10 @@ def get_historical_data(ticker: str, start_date: str, end_date: str) -> pd.DataF
     if cache_key in _cache:
         return _cache[cache_key].copy()
 
-    # YFinance requires valid tickers. We support NVDA, BTC-USD, and GC=F (Gold).
-    # If the user passed just 'BTC', we map it.
+    # YFinance requires valid tickers. We support NVDA, BTC-USD, and GLD (Gold ETF).
     mapping = {
         "BTC": "BTC-USD",
-        "GOLD": "GC=F"
+        "GOLD": "GLD"
     }
     actual_ticker = mapping.get(ticker.upper(), ticker.upper())
 

@@ -18,6 +18,10 @@ def run_backtest(data: pd.DataFrame, strategy: str, params: dict) -> dict:
     # Generate target position signals (-1, 0, 1)
     df['Target_Signal'] = generate_signals(df, strategy, params)
     
+    # Shift signals by 1 to execute at the close of T+1 (eliminating look-ahead bias)
+    # A signal generated at T is actionable at T+1.
+    df['Target_Signal'] = df['Target_Signal'].shift(1).fillna(0)
+    
     cash = initial_capital
     holdings = 0.0
     
@@ -43,7 +47,7 @@ def run_backtest(data: pd.DataFrame, strategy: str, params: dict) -> dict:
         # Benchmark value
         bnh_values.append(bnh_shares * price)
         
-        # Determine if we need to trade to reach target
+        # Determine if we need to trade to reach target (executed at current close `price`)
         if target != current_pos:
             # First, close existing position if any
             if current_pos != 0:
@@ -93,12 +97,17 @@ def run_backtest(data: pd.DataFrame, strategy: str, params: dict) -> dict:
     df['Portfolio_Value'] = portfolio_values
     df['BnH_Value'] = bnh_values
     
-    # Calculate Metrics
     def calc_metrics(series):
         if len(series) < 2: return {"return": 0, "sharpe": 0, "drawdown": 0}
+        
+        from quant.quant_fixes import sharpe_ratio, infer_periods_per_year
         returns = pd.Series(series).pct_change().dropna()
         tot_ret = (series[-1] / series[0]) - 1.0
-        sharpe = (returns.mean() / returns.std() * np.sqrt(252)) if returns.std() > 0 else 0
+        
+        # Calculate Sharpe using the robust logic from quant_fixes (defaulting to 2% Risk Free Rate)
+        ppy = infer_periods_per_year(df.index)
+        sharpe = sharpe_ratio(returns, ppy, 0.02)
+        
         roll_max = pd.Series(series).cummax()
         dd = (pd.Series(series) / roll_max) - 1.0
         max_dd = dd.min()

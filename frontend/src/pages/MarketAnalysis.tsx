@@ -50,7 +50,7 @@ export default function MarketAnalysis() {
           >
             <option value="NVDA">NVIDIA (NVDA)</option>
             <option value="BTC">Bitcoin (BTC)</option>
-            <option value="GOLD">Gold (GC=F)</option>
+            <option value="GOLD">Gold (GLD ETF)</option>
           </select>
         </div>
         <div>
@@ -75,7 +75,7 @@ export default function MarketAnalysis() {
       {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <MetricCard title="Annual Volatility" value={metrics ? `${(metrics.annualized_volatility * 100).toFixed(2)}%` : '--'} icon={<Activity className="text-secondary" />} isSimpleMode={isSimpleMode} />
-        <MetricCard title="Sharpe Ratio" value={metrics ? metrics.sharpe_ratio.toFixed(2) : '--'} icon={<TrendingUp className="text-primary" />} isSimpleMode={isSimpleMode} />
+        <MetricCard title="Sharpe Ratio (RF=2%)" value={metrics ? metrics.sharpe_ratio.toFixed(2) : '--'} icon={<TrendingUp className="text-primary" />} isSimpleMode={isSimpleMode} />
         <MetricCard title="Max Drawdown" value={metrics ? `${(metrics.max_drawdown * 100).toFixed(2)}%` : '--'} icon={<AlertTriangle className="text-danger" />} isSimpleMode={isSimpleMode} />
         <MetricCard title="Total Return" value={metrics ? `${(metrics.total_return * 100).toFixed(2)}%` : '--'} icon={<BarChart2 className="text-white" />} isSimpleMode={isSimpleMode} />
       </div>
@@ -131,7 +131,7 @@ function MetricCard({ title, value, icon, isSimpleMode = false }: { title: strin
   const getSimpleLabel = (t: string) => {
     switch (t) {
       case 'Annual Volatility': return 'Price Swings';
-      case 'Sharpe Ratio': return 'Risk-Adjusted Score';
+      case 'Sharpe Ratio (RF=2%)': return 'Risk-Adjusted Score';
       case 'Max Drawdown': return 'Worst Case Drop';
       case 'Total Return': return 'Total Profit';
       default: return t;
@@ -141,7 +141,7 @@ function MetricCard({ title, value, icon, isSimpleMode = false }: { title: strin
   const getDef = (t: string) => {
     switch (t) {
       case 'Annual Volatility': return 'How violently the price swings up and down over a year.';
-      case 'Sharpe Ratio': return 'Measures return compared to the risk taken. Above 1.0 is good, below 0 is bad.';
+      case 'Sharpe Ratio (RF=2%)': return 'Measures return compared to the risk taken. Above 1.0 is good, below 0 is bad.';
       case 'Max Drawdown': return 'The biggest single drop from a high point to a low point.';
       case 'Total Return': return 'The total percentage of money made (or lost).';
       default: return '';

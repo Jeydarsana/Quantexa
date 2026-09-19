@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Activity, AlertTriangle, Layers, TrendingDown, TrendingUp, HelpCircle } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ComposedChart, ReferenceArea } from 'recharts';
+import { Activity, AlertTriangle, Layers, HelpCircle } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ComposedChart, Line } from 'recharts';
 import { useMode } from '../contexts/ModeContext';
 import GlossaryTerm from '../components/GlossaryTerm';
 
@@ -78,7 +78,7 @@ export default function MarketRegimes() {
           >
             <option value="NVDA">NVIDIA (NVDA)</option>
             <option value="BTC">Bitcoin (BTC)</option>
-            <option value="GOLD">Gold (GC=F)</option>
+            <option value="GOLD">Gold (GLD ETF)</option>
           </select>
         </div>
         <div>
@@ -157,7 +157,7 @@ export default function MarketRegimes() {
                 <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                   <XAxis dataKey="Date" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} minTickGap={50} />
-                  <YAxis domain={[-5, 5]} stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                  <YAxis domain={[-5, 5]} stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} tickFormatter={(val) => val.toFixed(1)} />
                   <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }} />
                   <Bar 
                     dataKey="Z_Score" 

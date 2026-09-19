@@ -60,7 +60,7 @@ export default function StrategyLab() {
             isSimpleMode={isSimpleMode}
           />
           <MetricCard 
-            title="Sharpe Ratio" 
+            title="Sharpe Ratio (RF=2%)" 
             strategy={metrics?.strategy.sharpe_ratio}
             benchmark={metrics?.benchmark.sharpe_ratio}
             icon={<Activity className="text-primary" />} 
@@ -195,8 +195,8 @@ function MetricCard({ title, strategy, benchmark, icon, isRatio = false, isSimpl
         <p className="text-sm font-medium text-textMuted">
           <GlossaryTerm 
             term={title}
-            simpleLabel={title === 'Total Return' ? 'Total Profit' : title === 'Sharpe Ratio' ? 'Risk-Adjusted Score' : 'Worst Case Drop'}
-            definition={title === 'Total Return' ? 'The total percentage of money made (or lost) over the entire time period.' : title === 'Sharpe Ratio' ? 'Measures return compared to the risk taken. Above 1.0 is good, below 0 is bad.' : 'The biggest single drop from a high point to a low point. Shows how much pain you might endure.'}
+            simpleLabel={title === 'Total Return' ? 'Total Profit' : title.includes('Sharpe') ? 'Risk-Adjusted Score' : 'Worst Case Drop'}
+            definition={title === 'Total Return' ? 'The total percentage of money made (or lost) over the entire time period.' : title.includes('Sharpe') ? 'Measures return compared to the risk taken. Above 1.0 is good, below 0 is bad.' : 'The biggest single drop from a high point to a low point. Shows how much pain you might endure.'}
             isSimpleMode={isSimpleMode}
           />
         </p>

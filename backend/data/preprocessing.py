@@ -9,6 +9,12 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
         
+    # Strip timezones and normalize to date to ensure Crypto (UTC) and Equities (EST) align
+    if isinstance(df.index, pd.DatetimeIndex):
+        df.index = pd.to_datetime(df.index).tz_localize(None).normalize()
+        # Drop duplicates if any arise from date truncation
+        df = df[~df.index.duplicated(keep='last')]
+        
     # Sort dates
     df = df.sort_index()
     

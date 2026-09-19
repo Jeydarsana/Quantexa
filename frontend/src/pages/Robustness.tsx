@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Shield, Play } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { useMode } from '../contexts/ModeContext';
@@ -14,16 +14,30 @@ export default function Robustness() {
   
   const [distribution, setDistribution] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
+  
+  const [heatmapData, setHeatmapData] = useState<any[]>([]);
+  const [xAxis, setXAxis] = useState<number[]>([]);
+  const [yAxis, setYAxis] = useState<number[]>([]);
+  const [sweepAnalysis, setSweepAnalysis] = useState<any>(null);
 
   const runSimulation = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/robustness`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker, start_date: startDate, end_date: endDate, strategy, params: {} })
-      });
-      const data = await res.json();
+      const [mcRes, sweepRes] = await Promise.all([
+        fetch(`http://localhost:8000/api/robustness`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticker, start_date: startDate, end_date: endDate, strategy, params: {} })
+        }),
+        fetch(`http://localhost:8000/api/robustness/sweep`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticker, start_date: startDate, end_date: endDate, strategy })
+        })
+      ]);
+      
+      const data = await mcRes.json();
+      const sweepData = await sweepRes.json();
       if (data.iterations) {
         // Bin the returns into a histogram
         const returns = data.iterations.map((i: any) => i.return * 100);
@@ -56,6 +70,13 @@ export default function Robustness() {
           p95: returns[Math.floor(returns.length * 0.95)].toFixed(2)
         });
       }
+      
+      if (sweepData.heatmap) {
+        setHeatmapData(sweepData.heatmap);
+        setXAxis(sweepData.xAxis);
+        setYAxis(sweepData.yAxis);
+        setSweepAnalysis(sweepData.analysis);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -81,7 +102,7 @@ export default function Robustness() {
           <select value={ticker} onChange={(e) => setTicker(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none">
             <option value="NVDA">NVIDIA</option>
             <option value="BTC">Bitcoin</option>
-            <option value="GOLD">Gold</option>
+            <option value="GOLD">Gold (GLD ETF)</option>
           </select>
         </div>
         <div>
@@ -103,12 +124,13 @@ export default function Robustness() {
         </div>
         <div>
           <button onClick={runSimulation} disabled={loading} className="w-full bg-primary hover:bg-primaryHover text-white font-medium py-2 px-4 rounded-lg flex justify-center items-center h-[42px] gap-2">
-            {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <><Play className="w-4 h-4" /> Run Monte Carlo</>}
+            {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <><Play className="w-4 h-4" /> Run Robustness Tests</>}
           </button>
         </div>
       </div>
 
       {stats && (
+        <>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="card lg:col-span-2">
             <h3 className="text-lg font-bold mb-4">Simulated Return Distribution (50 Iterations)</h3>
@@ -171,6 +193,84 @@ export default function Robustness() {
             </div>
           </div>
         </div>
+        
+        {/* Parameter Sweep Heatmap */}
+        {sweepAnalysis && (
+          <div className="card mt-6">
+            <h3 className="text-lg font-bold mb-4">2D Parameter Sweep Heatmap</h3>
+            {isSimpleMode && (
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4 text-sm text-textMuted leading-relaxed flex gap-2 items-start">
+                <Shield className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-white">What this means:</strong> We tested this strategy across dozens of different parameter combinations (like 10-day vs 50-day windows). 
+                  If you see one isolated bright green square surrounded by red, it means the strategy was just "lucky" on that specific setting and will likely fail in real life. 
+                  A mathematically robust strategy has a large "stable plateau" of green squares.
+                </div>
+              </div>
+            )}
+            
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-1">
+                <div className="grid gap-1" style={{ gridTemplateColumns: `auto repeat(${xAxis.length}, minmax(0, 1fr))` }}>
+                  {/* Top Header Row (X Axis) */}
+                  <div className="text-center font-bold text-textMuted text-xs p-2">Param 1 \ Param 2</div>
+                  {xAxis.map(x => <div key={`hx-${x}`} className="text-center font-bold text-textMuted text-xs p-2">{x}</div>)}
+                  
+                  {/* Data Rows */}
+                  {yAxis.map(y => (
+                    <React.Fragment key={`row-${y}`}>
+                      <div className="text-right font-bold text-textMuted text-xs p-2 flex items-center justify-end pr-4">{y}</div>
+                      {xAxis.map(x => {
+                        const cell = heatmapData.find(d => d.p1 === y && d.p2 === x);
+                        if (!cell || cell.sharpe === null) {
+                          return <div key={`cell-${y}-${x}`} className="bg-surfaceHover/50 rounded-sm"></div>;
+                        }
+                        const val = cell.sharpe;
+                        // Color scaling: red (-1) to green (2)
+                        const isPositive = val > 0;
+                        const intensity = Math.min(Math.abs(val) / 2, 1);
+                        const bgColor = isPositive ? `rgba(16, 185, 129, ${intensity})` : `rgba(239, 68, 68, ${intensity})`;
+                        
+                        return (
+                          <div 
+                            key={`cell-${y}-${x}`} 
+                            className="p-3 text-center rounded-sm text-white font-medium text-xs border border-white/5" 
+                            style={{ backgroundColor: bgColor }}
+                            title={`Sharpe: ${val.toFixed(2)}`}
+                          >
+                            {val.toFixed(2)}
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="w-full md:w-64 bg-surfaceHover border border-border rounded-lg p-5 flex flex-col justify-center">
+                <h4 className="text-sm font-bold text-textMuted mb-2 uppercase tracking-wider">Quantitative Verdict</h4>
+                <p className={`text-xl font-bold mb-4 ${sweepAnalysis.isolated_peak ? 'text-danger' : 'text-secondary'}`}>
+                  {sweepAnalysis.verdict}
+                </p>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-textMuted">Isolated Peak</span>
+                    <span className="font-medium text-white">{sweepAnalysis.isolated_peak ? 'Yes' : 'No'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-textMuted">Neighborhood Avg Sharpe</span>
+                    <span className="font-medium text-white">{sweepAnalysis.stable_choice.neighbourhood_median.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-textMuted">Trials Run</span>
+                    <span className="font-medium text-white">{sweepAnalysis.n_trials}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   );
