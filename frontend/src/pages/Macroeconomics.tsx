@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useMode } from '../contexts/ModeContext';
 import GlossaryTerm from '../components/GlossaryTerm';
+import ReactMarkdown from 'react-markdown';
 
 interface ProductInput {
   id: string;
@@ -604,9 +605,7 @@ export default function Macroeconomics() {
                 </div>
               ) : (
                 <div className="prose prose-invert prose-sm max-w-none text-text">
-                  {aiExplanation?.split('\n').map((para, i) => (
-                    <p key={i} className="mb-3">{para}</p>
-                  ))}
+                  <ReactMarkdown>{aiExplanation || ''}</ReactMarkdown>
                 </div>
               )}
             </div>
