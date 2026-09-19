@@ -12,6 +12,7 @@ class BacktestRequest(BaseModel):
     end_date: str
     strategy: str
     params: dict = {}
+    benchmark_ticker: str = None
 
 @router.post("/backtest")
 def run_strategy(req: BacktestRequest):
@@ -21,7 +22,14 @@ def run_strategy(req: BacktestRequest):
             raise HTTPException(status_code=404, detail="No data found for backtest.")
         
         clean_df = clean_data(data)
-        results = run_backtest(clean_df, req.strategy, req.params)
+        
+        benchmark_df = None
+        if req.benchmark_ticker:
+            b_data = get_historical_data(req.benchmark_ticker, req.start_date, req.end_date)
+            if not b_data.empty:
+                benchmark_df = clean_data(b_data)
+                
+        results = run_backtest(clean_df, req.strategy, req.params, benchmark_df=benchmark_df)
         return {"results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

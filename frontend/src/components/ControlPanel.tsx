@@ -12,6 +12,7 @@ export default function ControlPanel({ onRun, loading }: ControlPanelProps) {
   const [startDate, setStartDate] = useState('2020-01-01');
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [strategy, setStrategy] = useState('SMA_Crossover');
+  const [useNifty, setUseNifty] = useState(false);
   
   const [capital, setCapital] = useState('10000');
   const [txCost, setTxCost] = useState('0.1');
@@ -26,6 +27,7 @@ export default function ControlPanel({ onRun, loading }: ControlPanelProps) {
       start_date: startDate,
       end_date: endDate,
       strategy,
+      benchmark_ticker: useNifty ? '^NSEI' : undefined,
       params: {
         short_window: parseInt(shortWindow),
         long_window: parseInt(longWindow),
@@ -53,6 +55,22 @@ export default function ControlPanel({ onRun, loading }: ControlPanelProps) {
         <div>
           <label className="block text-xs font-medium text-textMuted mb-1">End Date</label>
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full bg-background border border-border rounded px-2 py-2 text-sm outline-none text-white" />
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-border">
+        <label className="block text-xs font-medium text-textMuted mb-2">Benchmark</label>
+        <div className="flex items-center gap-2 mb-2">
+          <input 
+            type="checkbox" 
+            id="useNifty"
+            checked={useNifty}
+            onChange={(e) => setUseNifty(e.target.checked)}
+            className="rounded border-border bg-background text-primary focus:ring-primary/50"
+          />
+          <label htmlFor="useNifty" className="text-xs text-white cursor-pointer">
+            Compare against NIFTY 50 Index
+          </label>
         </div>
       </div>
 

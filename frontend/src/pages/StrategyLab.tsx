@@ -11,6 +11,7 @@ export default function StrategyLab() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [tradeLog, setTradeLog] = useState<any[]>([]);
   const [explanation, setExplanation] = useState<string>('');
+  const [benchmarkName, setBenchmarkName] = useState<string>('Buy & Hold');
   const { isSimpleMode } = useMode();
   
   const handleRunBacktest = async (params: any) => {
@@ -27,6 +28,7 @@ export default function StrategyLab() {
         setMetrics(data.results.metrics);
         setChartData(data.results.chart_data);
         setTradeLog(data.results.trade_log);
+        setBenchmarkName(data.results.benchmark_name || 'Buy & Hold');
         
         // Fetch AI Explanation
         const aiResponse = await fetch('http://localhost:8000/api/ai/explain', {
@@ -56,6 +58,7 @@ export default function StrategyLab() {
             title="Total Return" 
             strategy={metrics?.strategy.total_return}
             benchmark={metrics?.benchmark.total_return}
+            benchmarkName={benchmarkName}
             icon={<TrendingUp className="text-secondary" />} 
             isSimpleMode={isSimpleMode}
           />
@@ -63,6 +66,7 @@ export default function StrategyLab() {
             title="Sharpe Ratio (RF=2%)" 
             strategy={metrics?.strategy.sharpe_ratio}
             benchmark={metrics?.benchmark.sharpe_ratio}
+            benchmarkName={benchmarkName}
             icon={<Activity className="text-primary" />} 
             isRatio
             isSimpleMode={isSimpleMode}
@@ -71,6 +75,7 @@ export default function StrategyLab() {
             title="Max Drawdown" 
             strategy={metrics?.strategy.max_drawdown}
             benchmark={metrics?.benchmark.max_drawdown}
+            benchmarkName={benchmarkName}
             icon={<AlertTriangle className="text-danger" />} 
             isSimpleMode={isSimpleMode}
           />
@@ -84,7 +89,7 @@ export default function StrategyLab() {
           
           {isSimpleMode && (
             <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4 text-sm text-textMuted leading-relaxed">
-              <strong className="text-white">What this means:</strong> The green line shows how your money would have grown (or shrunk) if you traded this strategy. The purple line shows what would have happened if you just bought and held the asset without trading.
+              <strong className="text-white">What this means:</strong> The green line shows how your money would have grown (or shrunk) if you traded this strategy. The purple line shows what would have happened if you just tracked the baseline ({benchmarkName}).
             </div>
           )}
           
@@ -103,7 +108,7 @@ export default function StrategyLab() {
                     <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }} formatter={(val: any) => `${(Number(val) * 100).toFixed(2)}%`} />
                     <Legend />
                     <Line type="monotone" name="Strategy" dataKey="Strategy_Growth" stroke="#10B981" dot={false} strokeWidth={2} />
-                    <Line type="monotone" name="Buy & Hold" dataKey="BnH_Growth" stroke="#6366F1" dot={false} strokeWidth={2} opacity={0.6} />
+                    <Line type="monotone" name={benchmarkName} dataKey="BnH_Growth" stroke="#6366F1" dot={false} strokeWidth={2} opacity={0.6} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -175,7 +180,7 @@ export default function StrategyLab() {
   );
 }
 
-function MetricCard({ title, strategy, benchmark, icon, isRatio = false, isSimpleMode = false }: any) {
+function MetricCard({ title, strategy, benchmark, benchmarkName = 'B&H', icon, isRatio = false, isSimpleMode = false }: any) {
   if (strategy === undefined) {
     return (
       <div className="card flex items-center justify-between">
@@ -204,7 +209,7 @@ function MetricCard({ title, strategy, benchmark, icon, isRatio = false, isSimpl
       <div className="flex items-end gap-3">
         <p className={`text-2xl font-bold ${sColor}`}>{formatValue(strategy)}</p>
         <div className="text-xs text-textMuted pb-1">
-          B&H: {formatValue(benchmark)}
+          {benchmarkName}: {formatValue(benchmark)}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from backtesting.strategies import generate_signals
 
-def run_backtest(data: pd.DataFrame, strategy: str, params: dict) -> dict:
+def run_backtest(data: pd.DataFrame, strategy: str, params: dict, benchmark_df: pd.DataFrame = None) -> dict:
     """
     Simulates a portfolio execution based on strategy signals.
     Supports Initial Capital, Transaction Costs, Position Sizing, and Trade Logging.
@@ -29,7 +29,14 @@ def run_backtest(data: pd.DataFrame, strategy: str, params: dict) -> dict:
     trade_log = []
     
     # Benchmarks
-    bnh_shares = initial_capital / df['Close'].iloc[0]
+    if benchmark_df is not None and not benchmark_df.empty and 'Close' in benchmark_df.columns:
+        bench_closes = benchmark_df['Close'].reindex(df.index, method='ffill').bfill().values
+        benchmark_name = "NIFTY 50"
+    else:
+        bench_closes = df['Close'].values
+        benchmark_name = "Buy & Hold"
+        
+    bnh_shares = initial_capital / bench_closes[0]
     bnh_values = []
     
     dates = df.index.astype(str).tolist()
@@ -43,9 +50,10 @@ def run_backtest(data: pd.DataFrame, strategy: str, params: dict) -> dict:
         price = closes[i]
         date = dates[i]
         target = signals[i]
+        bench_price = bench_closes[i]
         
         # Benchmark value
-        bnh_values.append(bnh_shares * price)
+        bnh_values.append(bnh_shares * bench_price)
         
         # Determine if we need to trade to reach target (executed at current close `price`)
         if target != current_pos:
@@ -138,6 +146,7 @@ def run_backtest(data: pd.DataFrame, strategy: str, params: dict) -> dict:
             "strategy": strat_metrics,
             "benchmark": bnh_metrics
         },
+        "benchmark_name": benchmark_name,
         "trade_log": trade_log,
         "chart_data": chart_df.to_dict(orient="records")
     }
