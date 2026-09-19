@@ -176,7 +176,7 @@ export default function Macroeconomics() {
             <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">1</div>
             <div>
               <h2 className="text-lg font-bold text-white">Gross Domestic Product (Expenditure Approach)</h2>
-              <p className="text-xs text-textMuted">Formula: GDP = C + I + G + (X - M)</p>
+              <p className="text-xs text-textMuted mb-1">Formula: GDP = C + I + G + (X - M)</p>
             </div>
           </div>
           <button onClick={resetExpenditure} className="p-2 bg-surfaceHover rounded hover:bg-border transition-colors group" title="Reset">
@@ -184,28 +184,37 @@ export default function Macroeconomics() {
           </button>
         </div>
 
+        <p className="text-sm text-textMuted leading-relaxed">
+          This calculator measures a country's economic size by adding up all the money spent by its various groups. Enter the estimated spending for each category below to compute the total Gross Domestic Product.
+        </p>
+
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-textMuted">Private Consumption (C)</label>
-              <input type="number" min="0" value={c} onChange={e => setC(e.target.value)} placeholder="0.00" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <input type="number" min="0" value={c} onChange={e => setC(e.target.value)} placeholder="e.g. Household spending" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <p className="text-[10px] text-textMuted opacity-70">Total spending by consumers on everyday goods (food, rent, gas).</p>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-textMuted">Investment (I)</label>
-              <input type="number" min="0" value={i} onChange={e => setI(e.target.value)} placeholder="0.00" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <input type="number" min="0" value={i} onChange={e => setI(e.target.value)} placeholder="e.g. Business equipment" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <p className="text-[10px] text-textMuted opacity-70">Money spent by businesses on machinery, factories, or inventory.</p>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-textMuted">Government Expenditure (G)</label>
-              <input type="number" min="0" value={g} onChange={e => setG(e.target.value)} placeholder="0.00" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <input type="number" min="0" value={g} onChange={e => setG(e.target.value)} placeholder="e.g. Public infrastructure" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <p className="text-[10px] text-textMuted opacity-70">Government spending on public services, military, and infrastructure.</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-textMuted">Exports (X)</label>
-                <input type="number" min="0" value={x} onChange={e => setX(e.target.value)} placeholder="0.00" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+                <input type="number" min="0" value={x} onChange={e => setX(e.target.value)} placeholder="e.g. Goods sold abroad" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+                <p className="text-[10px] text-textMuted opacity-70">Value of domestic goods sold to foreign countries.</p>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-textMuted">Imports (M)</label>
-                <input type="number" min="0" value={m} onChange={e => setM(e.target.value)} placeholder="0.00" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+                <input type="number" min="0" value={m} onChange={e => setM(e.target.value)} placeholder="e.g. Foreign goods bought" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+                <p className="text-[10px] text-textMuted opacity-70">Value of foreign goods purchased by domestic consumers.</p>
               </div>
             </div>
           </div>
@@ -242,6 +251,10 @@ export default function Macroeconomics() {
             <RefreshCw className="w-4 h-4 text-textMuted group-hover:text-white" />
           </button>
         </div>
+
+        <p className="text-sm text-textMuted leading-relaxed">
+          Calculate how much of a country's economic growth is real vs. just inflation. Enter a few sample products the economy makes, how many they made this year (Current Quantity), what they cost this year (Current Price), and what they cost in a past "Base" year.
+        </p>
 
         <div className="bg-background rounded-xl border border-border overflow-hidden">
           <table className="w-full text-left text-sm">
@@ -427,6 +440,10 @@ export default function Macroeconomics() {
           </button>
         </div>
 
+        <p className="text-sm text-textMuted leading-relaxed">
+          While GDP measures what is produced <strong>inside</strong> a country's borders, GNP measures what is produced by a country's <strong>citizens</strong>, regardless of where they are in the world. Use this to adjust GDP based on international cash flows.
+        </p>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="space-y-1">
@@ -434,15 +451,18 @@ export default function Macroeconomics() {
                 <span>Domestic GDP</span>
                 <button onClick={() => setGnpGdp(gdpTotal)} className="text-primary hover:underline text-[10px]">Use Section 1 GDP</button>
               </label>
-              <input type="number" min="0" value={gnpGdp} onChange={e => setGnpGdp(e.target.value)} placeholder="0.00" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <input type="number" min="0" value={gnpGdp} onChange={e => setGnpGdp(e.target.value)} placeholder="e.g. 25000000" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <p className="text-[10px] text-textMuted opacity-70">The baseline Gross Domestic Product calculated earlier.</p>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-textMuted">Income Received from Abroad</label>
-              <input type="number" min="0" value={incomeFromAbroad} onChange={e => setIncomeFromAbroad(e.target.value)} placeholder="0.00" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <input type="number" min="0" value={incomeFromAbroad} onChange={e => setIncomeFromAbroad(e.target.value)} placeholder="e.g. Profits from overseas branches" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <p className="text-[10px] text-textMuted opacity-70">Money earned by your citizens/companies operating in other countries.</p>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-textMuted">Income Paid to Foreign Factors</label>
-              <input type="number" min="0" value={incomeToAbroad} onChange={e => setIncomeToAbroad(e.target.value)} placeholder="0.00" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <input type="number" min="0" value={incomeToAbroad} onChange={e => setIncomeToAbroad(e.target.value)} placeholder="e.g. Profits sent to foreign HQs" className="w-full bg-background border border-border rounded-lg p-2 text-white font-mono" />
+              <p className="text-[10px] text-textMuted opacity-70">Money earned by foreign citizens/companies operating inside your country.</p>
             </div>
           </div>
 
@@ -488,6 +508,10 @@ export default function Macroeconomics() {
             <RefreshCw className="w-4 h-4 text-textMuted group-hover:text-white" />
           </button>
         </div>
+
+        <p className="text-sm text-textMuted leading-relaxed">
+          See how changes in a Central Bank's interest rates theoretically ripple through the economy to affect borrowing, inflation, and growth. Enter the old and new interest rates to see the transmission mechanism.
+        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-5 space-y-4">
