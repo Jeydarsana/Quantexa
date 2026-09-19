@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Globe2, 
   RefreshCw,
@@ -26,11 +26,11 @@ export default function Macroeconomics() {
   
   // -- GDP Expenditure State --
   const [currency, setCurrency] = useState('USD');
-  const [c, setC] = useState<number | ''>('');
-  const [i, setI] = useState<number | ''>('');
-  const [g, setG] = useState<number | ''>('');
-  const [x, setX] = useState<number | ''>('');
-  const [m, setM] = useState<number | ''>('');
+  const [c, setC] = useState<number | string>('');
+  const [i, setI] = useState<number | string>('');
+  const [g, setG] = useState<number | string>('');
+  const [x, setX] = useState<number | string>('');
+  const [m, setM] = useState<number | string>('');
 
   const gdpTotal = (Number(c) || 0) + (Number(i) || 0) + (Number(g) || 0) + ((Number(x) || 0) - (Number(m) || 0));
 
@@ -55,9 +55,9 @@ export default function Macroeconomics() {
 
   // -- GDP Deflator State --
   const [useCalculatedDeflator, setUseCalculatedDeflator] = useState(true);
-  const [manualNominalGdp, setManualNominalGdp] = useState<number | ''>('');
-  const [manualRealGdp, setManualRealGdp] = useState<number | ''>('');
-  const [previousDeflator, setPreviousDeflator] = useState<number | ''>(100);
+  const [manualNominalGdp, setManualNominalGdp] = useState<number | string>('');
+  const [manualRealGdp, setManualRealGdp] = useState<number | string>('');
+  const [previousDeflator, setPreviousDeflator] = useState<number | string>(100);
 
   const currentNominalGdpDeflator = useCalculatedDeflator ? nominalGdp : (Number(manualNominalGdp) || 0);
   const currentRealGdpDeflator = useCalculatedDeflator ? realGdp : (Number(manualRealGdp) || 0);
@@ -66,21 +66,20 @@ export default function Macroeconomics() {
   const deflatorChange = Number(previousDeflator) > 0 ? ((gdpDeflator - Number(previousDeflator)) / Number(previousDeflator)) * 100 : 0;
 
   // -- GNP/GNI State --
-  const [gnpGdp, setGnpGdp] = useState<number | ''>('');
-  const [incomeFromAbroad, setIncomeFromAbroad] = useState<number | ''>('');
-  const [incomeToAbroad, setIncomeToAbroad] = useState<number | ''>('');
+  const [gnpGdp, setGnpGdp] = useState<number | string>('');
+  const [incomeFromAbroad, setIncomeFromAbroad] = useState<number | string>('');
+  const [incomeToAbroad, setIncomeToAbroad] = useState<number | string>('');
   
   const netFactorIncome = (Number(incomeFromAbroad) || 0) - (Number(incomeToAbroad) || 0);
   const gnp = (Number(gnpGdp) || 0) + netFactorIncome;
 
   // -- Monetary Policy Simulator State --
-  const [prevRate, setPrevRate] = useState<number | ''>(6.5);
-  const [newRate, setNewRate] = useState<number | ''>(6.0);
-  const [inflationRate, setInflationRate] = useState<number | ''>(3.2);
-  const [gdpGrowthRate, setGdpGrowthRate] = useState<number | ''>(1.5);
+  const [prevRate, setPrevRate] = useState<number | string>(6.5);
+  const [newRate, setNewRate] = useState<number | string>(6.0);
+  const [inflationRate, setInflationRate] = useState<number | string>(3.2);
+  const [gdpGrowthRate, setGdpGrowthRate] = useState<number | string>(1.5);
 
   const rateChange = (Number(newRate) || 0) - (Number(prevRate) || 0);
-  const rateDirection = rateChange > 0 ? 'Increase' : rateChange < 0 ? 'Decrease' : 'No change';
   const policyClassification = rateChange > 0 ? 'Potentially contractionary monetary policy' : rateChange < 0 ? 'Potentially expansionary monetary policy' : 'No change in policy rate';
 
   // -- AI Explanation State --
