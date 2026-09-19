@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Shield, Play } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import AssetSelector from '../components/AssetSelector';
 
 export default function Robustness() {
   const [ticker, setTicker] = useState('NVDA');
@@ -72,15 +73,13 @@ export default function Robustness() {
         </div>
       </div>
 
-      <div className="card grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-textMuted mb-1">Asset</label>
-          <select value={ticker} onChange={(e) => setTicker(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none">
-            <option value="NVDA">NVIDIA</option>
-            <option value="BTC">Bitcoin</option>
-            <option value="GOLD">Gold</option>
-          </select>
-        </div>
+      <div className="card grid grid-cols-1 md:grid-cols-5 gap-4 items-end relative z-20">
+        <AssetSelector 
+          value={ticker} 
+          onChange={setTicker} 
+          label="Asset" 
+          compact 
+        />
         <div>
           <label className="block text-sm font-medium text-textMuted mb-1">Strategy</label>
           <select value={strategy} onChange={(e) => setStrategy(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none">

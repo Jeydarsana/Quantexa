@@ -87,7 +87,7 @@ export default function StrategyLab() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                     <XAxis dataKey="Date" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} minTickGap={50} />
                     <YAxis stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} tickFormatter={(val) => `${(val * 100).toFixed(0)}%`} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }} formatter={(val: number) => `${(val * 100).toFixed(2)}%`} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }} formatter={(val: any) => `${(Number(val) * 100).toFixed(2)}%`} />
                     <Legend />
                     <Line type="monotone" name="Strategy" dataKey="Strategy_Growth" stroke="#10B981" dot={false} strokeWidth={2} />
                     <Line type="monotone" name="Buy & Hold" dataKey="BnH_Growth" stroke="#6366F1" dot={false} strokeWidth={2} opacity={0.6} />
@@ -173,7 +173,6 @@ function MetricCard({ title, strategy, benchmark, icon, isRatio = false }: any) 
   }
 
   const formatValue = (val: number) => isRatio ? val.toFixed(2) : `${(val * 100).toFixed(2)}%`;
-  const isBetter = title === 'Max Drawdown' ? strategy > benchmark : strategy > benchmark;
   const sColor = title === 'Max Drawdown' ? (strategy > -0.2 ? 'text-secondary' : 'text-danger') : (strategy > 0 ? 'text-secondary' : 'text-danger');
 
   return (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Activity, TrendingUp, AlertTriangle, BarChart2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import AssetSelector from '../components/AssetSelector';
 
 export default function MarketAnalysis() {
   const [ticker, setTicker] = useState('NVDA');
@@ -32,24 +33,18 @@ export default function MarketAnalysis() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [ticker]);
 
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="card grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-textMuted mb-1">Asset</label>
-          <select 
-            value={ticker} 
-            onChange={(e) => setTicker(e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none focus:border-primary"
-          >
-            <option value="NVDA">NVIDIA (NVDA)</option>
-            <option value="BTC">Bitcoin (BTC)</option>
-            <option value="GOLD">Gold (GC=F)</option>
-          </select>
-        </div>
+      <div className="card grid grid-cols-1 md:grid-cols-4 gap-4 items-end relative z-20">
+        <AssetSelector 
+          value={ticker} 
+          onChange={setTicker} 
+          label="Asset" 
+          compact 
+        />
         <div>
           <label className="block text-sm font-medium text-textMuted mb-1">Start Date</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none" />
@@ -105,7 +100,7 @@ export default function MarketAnalysis() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis dataKey="Date" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} minTickGap={50} />
                 <YAxis domain={['auto', 'auto']} stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} tickFormatter={(val) => `${(val * 100).toFixed(0)}%`} />
-                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }} formatter={(val: number) => `${(val * 100).toFixed(2)}%`} />
+                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }} formatter={(val: any) => `${(Number(val) * 100).toFixed(2)}%`} />
                 <Line type="monotone" dataKey="Rolling_Return" stroke="#EC4899" dot={false} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>

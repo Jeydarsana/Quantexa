@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Play } from 'lucide-react';
+import AssetSelector from './AssetSelector';
 
 interface ControlPanelProps {
   onRun: (params: any) => void;
@@ -41,11 +42,7 @@ export default function ControlPanel({ onRun, loading }: ControlPanelProps) {
       
       <div>
         <label className="block text-xs font-medium text-textMuted mb-1">Asset Ticker</label>
-        <select value={ticker} onChange={e => setTicker(e.target.value)} className="w-full bg-background border border-border rounded px-3 py-2 text-sm outline-none text-white">
-          <option value="NVDA">NVDA</option>
-          <option value="BTC">BTC</option>
-          <option value="GOLD">GOLD</option>
-        </select>
+        <AssetSelector value={ticker} onChange={setTicker} compact />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
