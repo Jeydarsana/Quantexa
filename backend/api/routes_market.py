@@ -37,16 +37,18 @@ def get_market_summary():
     """
     Returns a quick snapshot of NVDA, BTC, and GOLD.
     """
-    tickers = ["NVDA", "AMZN", "AAPL", "MSFT", "TSLA", "BTC", "ETH", "GOLD", "OIL", "SPY"]
+    tickers = ["NVDA", "AMZN", "AAPL", "MSFT", "GOOGL", "META", "TSLA", "BTC", "ETH", "GOLD", "OIL", "SPY"]
     display_names = {
         "NVDA": "NVIDIA (NVDA)",
         "AMZN": "Amazon (AMZN)",
         "AAPL": "Apple (AAPL)",
         "MSFT": "Microsoft (MSFT)",
+        "GOOGL": "Alphabet (GOOGL)",
+        "META": "Meta (META)",
         "TSLA": "Tesla (TSLA)",
         "BTC": "Bitcoin (BTC)",
         "ETH": "Ethereum (ETH)",
-        "GOLD": "Gold Futures",
+        "GOLD": "Gold (GLD)",
         "OIL": "Crude Oil",
         "SPY": "S&P 500 ETF"
     }
