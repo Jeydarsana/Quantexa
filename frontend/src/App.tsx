@@ -10,7 +10,6 @@ import Robustness from './pages/Robustness';
 import Intelligence from './pages/Intelligence';
 import PlaceholderPage from './pages/PlaceholderPage';
 import { useMode } from './contexts/ModeContext';
-import { ReactNode, Component, ErrorInfo } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
