@@ -1,65 +1,39 @@
-# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
 
-# compiled output
-dist
-tmp
-out-tsc
-*.tsbuildinfo
-.expo
-.expo-shared
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+backend/venv/
+backend/env/
+backend/.pytest_cache/
+backend/poetry.lock
 
-# dependencies
-node_modules
-.pnpm-store/
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.DS_Store
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/package-lock.json
 
-# Replit & Environment configurations
-.replit
-.replitignore
-.apt-packages
-.config/
-.cache/
-*.env
-*.env.*
-!.env.example
-
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 .DS_Store
-Thumbs.db
 
-.cursor/rules/nx-rules.mdc
-.github/instructions/nx.instructions.md
-
-# Replit
-.cache/
-.local/
-# Build and IDE outputs
-dist/
-build/
-.artifacts/
-attached_assets/
+# Misc
+.dockerignore
