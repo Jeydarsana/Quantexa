@@ -68,8 +68,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
 function App() {
   const tabs = [
-    { name: 'Strategy DNA', path: '/strategy-dna', featured: true },
     { name: 'Overview', path: '/overview' },
+    { name: 'Strategy DNA', path: '/strategy-dna', featured: true },
     { name: 'Market Analysis', path: '/market-analysis' },
     { name: 'Cross-Asset', path: '/cross-asset' },
     { name: 'Strategy Lab', path: '/strategy-lab' },
@@ -160,7 +160,7 @@ function App() {
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <ErrorBoundary>
             <Routes>
-              <Route path="/" element={<Navigate to="/strategy-dna" replace />} />
+              <Route path="/" element={<Navigate to="/overview" replace />} />
               <Route path="/strategy-dna" element={<StrategyDNA />} />
               <Route path="/overview" element={<Overview />} />
               <Route path="/market-analysis" element={<MarketAnalysis />} />

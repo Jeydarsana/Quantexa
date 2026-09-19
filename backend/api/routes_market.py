@@ -75,11 +75,14 @@ def get_market_summary():
             prev_price = float(prev_row['Close'])
             change_pct = ((price / prev_price) - 1.0) * 100
             
+            sparkline = df['Close'].tail(30).tolist()
+            
             results.append({
                 "ticker": display_names[t],
                 "price": price,
                 "change": change_pct,
-                "regime": str(last_row['Regime'])
+                "regime": str(last_row['Regime']),
+                "sparkline": sparkline
             })
             
         return {"summary": results}
