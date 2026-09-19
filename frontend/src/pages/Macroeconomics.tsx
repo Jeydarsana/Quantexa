@@ -390,7 +390,7 @@ export default function Macroeconomics() {
               <span className="text-xs text-textMuted font-bold block mb-1">GDP Deflator Index</span>
               <span className="text-3xl font-black text-amber-400 font-mono">
                 {currentRealGdpDeflator <= 0 ? (
-                  <span className="text-sm text-danger flex items-center justify-center gap-1"><AlertCircle className="w-4 h-4"/> Real GDP must be > 0</span>
+                  <span className="text-sm text-danger flex items-center justify-center gap-1"><AlertCircle className="w-4 h-4"/> Real GDP must be &gt; 0</span>
                 ) : (
                   gdpDeflator.toFixed(2)
                 )}
