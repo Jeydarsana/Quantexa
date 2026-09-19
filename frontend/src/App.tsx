@@ -8,6 +8,7 @@ import MarketRegimes from './pages/MarketRegimes';
 import Overview from './pages/Overview';
 import Robustness from './pages/Robustness';
 import Intelligence from './pages/Intelligence';
+import Macroeconomics from './pages/Macroeconomics';
 import PlaceholderPage from './pages/PlaceholderPage';
 import { useMode } from './contexts/ModeContext';
 
@@ -74,6 +75,7 @@ function App() {
     { name: 'Strategy Lab', path: '/strategy-lab' },
     { name: 'Robustness', path: '/robustness' },
     { name: 'Regimes', path: '/regimes' },
+    { name: 'Macroeconomics', path: '/macroeconomics' },
     { name: 'Intelligence', path: '/intelligence' },
   ];
 
@@ -166,6 +168,7 @@ function App() {
               <Route path="/strategy-lab" element={<StrategyLab />} />
               <Route path="/robustness" element={<Robustness />} />
               <Route path="/regimes" element={<MarketRegimes />} />
+              <Route path="/macroeconomics" element={<Macroeconomics />} />
               <Route path="/intelligence" element={<Intelligence />} />
             </Routes>
           </ErrorBoundary>

@@ -114,3 +114,92 @@ def get_ai_explanation(backtest_results: dict) -> str:
         
     error_summary = " | ".join(errors)
     return f"AI explanation failed. All configured providers were exhausted or rate limited. Details: {error_summary}"
+
+def get_macro_explanation(payload: dict) -> str:
+    """
+    Structured AI explanation service for macroeconomics module.
+    Automatically fails over between Gemini, Groq, and OpenRouter.
+    """
+    submodule = payload.get("submodule", "unknown")
+    inputs = payload.get("inputs", {})
+    results = payload.get("calculated_results", {})
+    context = payload.get("context", {}).get("description", "Explain the macroeconomic results.")
+    
+    prompt = f"""
+    You are a Chief Economist. 
+    Context: {context}
+    Sub-module: {submodule}
+    
+    User Inputs: {inputs}
+    Calculated Results: {results}
+    
+    Provide a concise, 2-3 paragraph explanation of these results in simple, accessible language.
+    Do NOT recompute the math. Assume the calculated results are mathematically correct.
+    Explain WHAT the result means for the economy and WHY it matters.
+    Use Markdown formatting.
+    """
+    
+    errors = []
+
+    # 1. Try Gemini
+    for key in settings.get_gemini_keys():
+        if not _is_key_available(key):
+            errors.append("Gemini key cooling down")
+            continue
+        try:
+            client = genai.Client(api_key=key)
+            response = client.models.generate_content(
+                model='gemini-3.1-pro-preview',
+                contents=prompt,
+            )
+            return response.text
+        except Exception as e:
+            err_str = str(e).lower()
+            errors.append(f"Gemini: {err_str}")
+            if "429" in err_str or "exhausted" in err_str or "503" in err_str or "500" in err_str:
+                _burn_key(key)
+
+    # 2. Try Groq
+    for key in settings.get_groq_keys():
+        if not _is_key_available(key):
+            errors.append("Groq key cooling down")
+            continue
+        try:
+            client = Groq(api_key=key)
+            response = client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model="llama3-70b-8192"
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            err_str = str(e).lower()
+            errors.append(f"Groq: {err_str}")
+            if "429" in err_str or "exhausted" in err_str or "503" in err_str or "500" in err_str:
+                _burn_key(key)
+
+    # 3. Try OpenRouter
+    for key in settings.get_openrouter_keys():
+        if not _is_key_available(key):
+            errors.append("OpenRouter key cooling down")
+            continue
+        try:
+            client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=key,
+            )
+            response = client.chat.completions.create(
+                model="meta-llama/llama-3-8b-instruct:free",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            err_str = str(e).lower()
+            errors.append(f"OpenRouter: {err_str}")
+            if "429" in err_str or "exhausted" in err_str or "503" in err_str or "500" in err_str:
+                _burn_key(key)
+            
+    if not errors:
+        return "AI explanation is unavailable because no API keys were configured."
+        
+    error_summary = " | ".join(errors)
+    return f"AI explanation failed. All configured providers were exhausted or rate limited. Details: {error_summary}"

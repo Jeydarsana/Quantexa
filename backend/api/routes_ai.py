@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from core.ai_client import get_ai_explanation
+from core.ai_client import get_ai_explanation, get_macro_explanation
 
 router = APIRouter()
 
@@ -49,3 +49,11 @@ def get_macro_report():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/explain-macro")
+def explain_macro(payload: dict):
+    try:
+        explanation = get_macro_explanation(payload)
+        return {"explanation": explanation}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
