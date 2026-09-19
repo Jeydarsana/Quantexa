@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Network, Activity, HelpCircle } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { useMode } from '../contexts/ModeContext';
-import GlossaryTerm from '../components/GlossaryTerm';
+import { useState, useEffect, useMemo, Fragment } from 'react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import AssetSelector from '../components/AssetSelector';
 
 export default function CrossAsset() {
   const [startDate, setStartDate] = useState('2020-01-01');
@@ -16,7 +14,13 @@ export default function CrossAsset() {
   const [rollingData, setRollingData] = useState<any[]>([]);
   const [loadingMatrix, setLoadingMatrix] = useState(false);
   const [loadingRolling, setLoadingRolling] = useState(false);
-  const { isSimpleMode } = useMode();
+
+  // Dynamic set of assets evaluated in the correlation matrix (always includes Asset A & B)
+  const matrixAssets = useMemo(() => {
+    const defaults = ['NVDA', 'AMZN', 'BTC', 'GOLD', 'SPY'];
+    const combined = [assetA, assetB, ...defaults];
+    return Array.from(new Set(combined)).slice(0, 5);
+  }, [assetA, assetB]);
 
   const fetchMatrix = async () => {
     setLoadingMatrix(true);
@@ -24,7 +28,7 @@ export default function CrossAsset() {
       const res = await fetch(`http://localhost:8000/api/analysis/correlation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start_date: startDate, end_date: endDate, assets: ["BTC", "NVDA", "GOLD"] })
+        body: JSON.stringify({ start_date: startDate, end_date: endDate, assets: matrixAssets })
       });
       const data = await res.json();
       if (data.matrix) setMatrix(data.matrix);
@@ -55,19 +59,16 @@ export default function CrossAsset() {
   useEffect(() => {
     fetchMatrix();
     fetchRolling();
-  }, []);
+  }, [assetA, assetB]);
 
   const handleUpdate = () => {
     fetchMatrix();
     fetchRolling();
   };
 
-  // Helper to format matrix for display
-  const assets = ["BTC", "NVDA", "GOLD"];
-
   return (
     <div className="space-y-6">
-      <div className="card grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+      <div className="card grid grid-cols-1 md:grid-cols-5 gap-4 items-end relative z-20">
         <div>
           <label className="block text-sm font-medium text-textMuted mb-1">Start Date</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none" />
@@ -76,20 +77,20 @@ export default function CrossAsset() {
           <label className="block text-sm font-medium text-textMuted mb-1">End Date</label>
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none" />
         </div>
+        <AssetSelector
+          value={assetA}
+          onChange={setAssetA}
+          label="Asset A"
+          compact
+        />
+        <AssetSelector
+          value={assetB}
+          onChange={setAssetB}
+          label="Asset B"
+          compact
+        />
         <div>
-          <label className="block text-sm font-medium text-textMuted mb-1">Asset A</label>
-          <select value={assetA} onChange={(e) => setAssetA(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none">
-            {assets.map(a => <option key={`a-${a}`} value={a}>{a}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-textMuted mb-1">Asset B</label>
-          <select value={assetB} onChange={(e) => setAssetB(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none">
-            {assets.map(a => <option key={`b-${a}`} value={a}>{a}</option>)}
-          </select>
-        </div>
-        <div>
-          <button onClick={handleUpdate} className="w-full bg-primary hover:bg-primaryHover text-white font-medium py-2 px-4 rounded-lg h-[42px]">
+          <button onClick={handleUpdate} className="w-full bg-primary hover:bg-primaryHover text-white font-medium py-2 px-4 rounded-lg h-[42px] cursor-pointer">
             Update Analysis
           </button>
         </div>
@@ -99,39 +100,34 @@ export default function CrossAsset() {
         {/* Correlation Matrix */}
         <div className="card lg:col-span-1">
           <h2 className="text-lg font-semibold mb-4">Correlation Matrix</h2>
-          
-          {isSimpleMode && matrix.length > 0 && (
-            <div className="bg-surfaceHover border border-border rounded-lg p-3 mb-4 text-sm text-textMuted flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-accent flex-shrink-0" />
-              <span><strong>What this means:</strong> A heatmap showing how strongly assets move together. <span className="text-secondary font-bold">1.0</span> means they move perfectly together, <span className="text-danger font-bold">-1.0</span> means they move opposite to each other.</span>
-            </div>
-          )}
-
           {loadingMatrix ? (
             <div className="h-64 flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-2 text-sm">
+            <div 
+              className="grid gap-2 text-xs" 
+              style={{ gridTemplateColumns: `repeat(${matrixAssets.length + 1}, minmax(0, 1fr))` }}
+            >
               <div className="font-bold text-textMuted"></div>
-              {assets.map(a => <div key={`h-${a}`} className="font-bold text-center">{a}</div>)}
+              {matrixAssets.map(a => <div key={`h-${a}`} className="font-bold text-center truncate">{a}</div>)}
               
-              {assets.map(a => (
-                <React.Fragment key={`row-${a}`}>
-                  <div className="font-bold flex items-center">{a}</div>
-                  {assets.map(b => {
+              {matrixAssets.map(a => (
+                <Fragment key={`row-${a}`}>
+                  <div className="font-bold flex items-center truncate">{a}</div>
+                  {matrixAssets.map(b => {
                     const cell = matrix.find(m => m.asset_a === a && m.asset_b === b);
-                    const val = cell ? cell.value : 0;
+                    const val = cell ? cell.value : (a === b ? 1.0 : 0);
                     // Color scaling: red (-1) to green (1)
-                    const bgOpacity = Math.abs(val);
+                    const bgOpacity = Math.min(1, Math.max(0.2, Math.abs(val)));
                     const bgColor = val > 0 ? `rgba(16, 185, 129, ${bgOpacity})` : `rgba(239, 68, 68, ${bgOpacity})`;
                     return (
-                      <div key={`cell-${a}-${b}`} className="p-3 text-center rounded text-white font-medium" style={{ backgroundColor: bgColor }}>
+                      <div key={`cell-${a}-${b}`} className="p-2 text-center rounded text-white font-medium" style={{ backgroundColor: bgColor }}>
                         {val.toFixed(2)}
                       </div>
                     );
                   })}
-                </React.Fragment>
+                </Fragment>
               ))}
             </div>
           )}
@@ -140,14 +136,7 @@ export default function CrossAsset() {
         {/* Rolling Correlation */}
         <div className="card lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">
-              <GlossaryTerm 
-                term={`Rolling Correlation (${assetA} vs ${assetB})`}
-                simpleLabel={`Relationship Over Time`}
-                definition={`Measures how the relationship between ${assetA} and ${assetB} has evolved dynamically over the selected window size.`}
-                isSimpleMode={isSimpleMode}
-              />
-            </h2>
+            <h2 className="text-lg font-semibold">Rolling Correlation ({assetA} vs {assetB})</h2>
             <select 
               value={windowSize} 
               onChange={(e) => { setWindowSize(Number(e.target.value)); setTimeout(fetchRolling, 0); }}
@@ -158,13 +147,6 @@ export default function CrossAsset() {
               <option value={90}>90 Days</option>
             </select>
           </div>
-          
-          {isSimpleMode && rollingData.length > 0 && (
-            <div className="bg-surfaceHover border border-border rounded-lg p-3 mb-4 text-sm text-textMuted flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-accent flex-shrink-0" />
-              <span><strong>What this means:</strong> This shows how the relationship between these assets has changed over time. If the line drops below zero, they started moving in opposite directions!</span>
-            </div>
-          )}
           
           <div className="w-full flex-1 min-h-[300px]">
             {loadingRolling ? (

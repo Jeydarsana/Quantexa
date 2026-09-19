@@ -37,8 +37,19 @@ def get_market_summary():
     """
     Returns a quick snapshot of NVDA, BTC, and GOLD.
     """
-    tickers = ["NVDA", "BTC-USD", "GC=F"] # Real yahoo finance tickers
-    display_names = {"NVDA": "NVIDIA", "BTC-USD": "Bitcoin", "GC=F": "Gold"}
+    tickers = ["NVDA", "AMZN", "AAPL", "MSFT", "TSLA", "BTC", "ETH", "GOLD", "OIL", "SPY"]
+    display_names = {
+        "NVDA": "NVIDIA (NVDA)",
+        "AMZN": "Amazon (AMZN)",
+        "AAPL": "Apple (AAPL)",
+        "MSFT": "Microsoft (MSFT)",
+        "TSLA": "Tesla (TSLA)",
+        "BTC": "Bitcoin (BTC)",
+        "ETH": "Ethereum (ETH)",
+        "GOLD": "Gold Futures",
+        "OIL": "Crude Oil",
+        "SPY": "S&P 500 ETF"
+    }
     
     results = []
     
@@ -46,11 +57,11 @@ def get_market_summary():
         # Just grab the last 60 days to get regime
         import datetime
         end_date = datetime.datetime.now().strftime("%Y-%m-%d")
-        start_date = (datetime.datetime.now() - datetime.timedelta(days=100)).strftime("%Y-%m-%d")
+        start_date = (datetime.datetime.now() - datetime.timedelta(days=150)).strftime("%Y-%m-%d")
         
         for t in tickers:
             df = get_historical_data(t, start_date, end_date)
-            if df.empty or len(df) < 55:
+            if df.empty or len(df) < 20:
                 continue
             
             # Detect regime

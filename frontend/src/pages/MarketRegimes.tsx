@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Activity, AlertTriangle, Layers, TrendingDown, TrendingUp, HelpCircle } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ComposedChart, ReferenceArea } from 'recharts';
-import { useMode } from '../contexts/ModeContext';
-import GlossaryTerm from '../components/GlossaryTerm';
+import { Activity, AlertTriangle, Compass } from 'lucide-react';
+import { ResponsiveContainer, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ComposedChart } from 'recharts';
+import AssetSelector from '../components/AssetSelector';
 
 export default function MarketRegimes() {
   const [ticker, setTicker] = useState('NVDA');
@@ -10,11 +9,10 @@ export default function MarketRegimes() {
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   
-  const [data, setData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [anomalies, setAnomalies] = useState<any[]>([]);
-  const { isSimpleMode } = useMode();
 
-  const fetchRegimes = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:8000/api/intelligence/regimes`, {
@@ -22,10 +20,10 @@ export default function MarketRegimes() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticker, start_date: startDate, end_date: endDate })
       });
-      const result = await res.json();
-      if (result.chart_data) {
-        setData(result.chart_data);
-        setAnomalies(result.anomalies || []);
+      const data = await res.json();
+      if (data.chart_data) {
+        setChartData(data.chart_data);
+        setAnomalies(data.anomalies || []);
       }
     } catch (e) {
       console.error(e);
@@ -35,27 +33,27 @@ export default function MarketRegimes() {
   };
 
   useEffect(() => {
-    fetchRegimes();
-  }, []);
+    fetchData();
+  }, [ticker]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const d = payload[0].payload;
+      const data = payload[0].payload;
       return (
         <div className="bg-surface border border-border p-3 rounded-lg shadow-xl">
           <p className="text-textMuted text-xs mb-1">{label}</p>
-          <p className="font-bold text-white mb-2">${d.Close?.toFixed(2)}</p>
+          <p className="font-bold text-white mb-2">${data.Close?.toFixed(2)}</p>
           <div className="space-y-1">
             <p className="text-xs">
               <span className="text-textMuted">Regime: </span>
-              <span className={`font-semibold ${d.Regime === 'Bullish' ? 'text-secondary' : d.Regime === 'Bearish' ? 'text-danger' : 'text-gray-400'}`}>
-                {d.Regime}
+              <span className={`font-semibold ${data.Regime === 'Bullish' ? 'text-secondary' : data.Regime === 'Bearish' ? 'text-danger' : 'text-gray-400'}`}>
+                {data.Regime}
               </span>
             </p>
             <p className="text-xs">
               <span className="text-textMuted">Z-Score: </span>
-              <span className={`font-semibold ${Math.abs(d.Z_Score) > 3 ? 'text-accent' : 'text-white'}`}>
-                {d.Z_Score?.toFixed(2)}
+              <span className={`font-semibold ${Math.abs(data.Z_Score) > 3 ? 'text-accent' : 'text-white'}`}>
+                {data.Z_Score?.toFixed(2)}
               </span>
             </p>
           </div>
@@ -68,19 +66,13 @@ export default function MarketRegimes() {
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="card grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-textMuted mb-1">Asset</label>
-          <select 
-            value={ticker} 
-            onChange={(e) => setTicker(e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none focus:border-primary"
-          >
-            <option value="NVDA">NVIDIA (NVDA)</option>
-            <option value="BTC">Bitcoin (BTC)</option>
-            <option value="GOLD">Gold (GC=F)</option>
-          </select>
-        </div>
+      <div className="card grid grid-cols-1 md:grid-cols-4 gap-4 items-end relative z-20">
+        <AssetSelector 
+          value={ticker} 
+          onChange={setTicker} 
+          label="Asset" 
+          compact 
+        />
         <div>
           <label className="block text-sm font-medium text-textMuted mb-1">Start Date</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none" />
@@ -91,7 +83,7 @@ export default function MarketRegimes() {
         </div>
         <div>
           <button 
-            onClick={fetchRegimes} 
+            onClick={fetchData} 
             disabled={loading}
             className="w-full bg-primary hover:bg-primaryHover text-white font-medium py-2 px-4 rounded-lg transition-colors flex justify-center items-center h-[42px]"
           >
@@ -103,41 +95,23 @@ export default function MarketRegimes() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Price & Regime Chart */}
-          <div className="card min-h-[400px]">
+          <div className="card">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Layers className="text-primary w-5 h-5" />
-              <GlossaryTerm 
-                term="Regime Classification & Price Trajectory" 
-                simpleLabel="Market Trend & Shocks"
-                definition="The current overarching trend of the market based on momentum slopes, overlaid with extreme volatility shocks."
-                isSimpleMode={isSimpleMode}
-              />
+              <Compass className="text-secondary w-5 h-5" />
+              Market Regime Analysis
             </h2>
-            
-            {isSimpleMode && (
-              <div className="bg-surfaceHover border border-border rounded-lg p-3 mb-4 text-sm text-textMuted flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-accent flex-shrink-0" />
-                <span><strong>What this means:</strong> The colored background blocks show the overarching trend (Green = Bullish, Red = Bearish). The red dots on the chart show extreme market shocks where prices moved unusually fast.</span>
-              </div>
-            )}
-            
-            {loading ? (
-              <div className="flex justify-center items-center h-[350px]">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : (
-              <div className="w-full" style={{ height: 350 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-                    <XAxis dataKey="Date" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} minTickGap={50} />
-                    <YAxis domain={['auto', 'auto']} stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Line type="monotone" dataKey="Close" stroke="#6366F1" dot={false} strokeWidth={2} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+            <div className="w-full" style={{ height: 350 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                  <XAxis dataKey="Date" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} minTickGap={50} />
+                  <YAxis domain={['auto', 'auto']} stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="Close" stroke="#6366F1" dot={false} strokeWidth={2} />
+                  {/* We can use a bar on a secondary Y axis to show the regime if we wanted, but tooltip is cleaner */}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
             <div className="flex items-center gap-4 mt-4 text-xs text-textMuted justify-center">
               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-secondary"></div> Bullish</span>
               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-danger"></div> Bearish</span>
@@ -154,7 +128,7 @@ export default function MarketRegimes() {
             </h2>
             <div className="w-full" style={{ height: 250 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                   <XAxis dataKey="Date" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} minTickGap={50} />
                   <YAxis domain={[-5, 5]} stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
@@ -175,17 +149,12 @@ export default function MarketRegimes() {
         </div>
 
         {/* Anomalies Table */}
-        <div className="card bg-danger/10 border-danger/20 lg:col-span-1 flex flex-col max-h-[700px]">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-danger">
-            <AlertTriangle className="w-5 h-5" />
-            <GlossaryTerm 
-              term="Structural Anomalies (>3σ)" 
-              simpleLabel="Extreme Market Shocks"
-              definition="Extreme volatility events (more than 3 standard deviations from average) that often signal a massive crash or a sudden rally."
-              isSimpleMode={isSimpleMode}
-            />
+        <div className="card lg:col-span-1 flex flex-col max-h-[700px]">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <AlertTriangle className="text-danger w-5 h-5" />
+            Structural Shocks
           </h2>
-          <p className="text-textMuted text-sm mb-4">
+          <p className="text-xs text-textMuted mb-4">
             Detected {anomalies.length} extreme volatility events (&gt;3 std dev). These often precede regime shifts.
           </p>
           <div className="overflow-y-auto flex-1 pr-2">

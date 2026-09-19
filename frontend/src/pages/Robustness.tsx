@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Shield, Play } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { useMode } from '../contexts/ModeContext';
-import GlossaryTerm from '../components/GlossaryTerm';
+import AssetSelector from '../components/AssetSelector';
 
 export default function Robustness() {
   const [ticker, setTicker] = useState('NVDA');
@@ -10,7 +9,6 @@ export default function Robustness() {
   const [startDate, setStartDate] = useState('2020-01-01');
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
-  const { isSimpleMode } = useMode();
   
   const [distribution, setDistribution] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -75,15 +73,13 @@ export default function Robustness() {
         </div>
       </div>
 
-      <div className="card grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-textMuted mb-1">Asset</label>
-          <select value={ticker} onChange={(e) => setTicker(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none">
-            <option value="NVDA">NVIDIA</option>
-            <option value="BTC">Bitcoin</option>
-            <option value="GOLD">Gold</option>
-          </select>
-        </div>
+      <div className="card grid grid-cols-1 md:grid-cols-5 gap-4 items-end relative z-20">
+        <AssetSelector 
+          value={ticker} 
+          onChange={setTicker} 
+          label="Asset" 
+          compact 
+        />
         <div>
           <label className="block text-sm font-medium text-textMuted mb-1">Strategy</label>
           <select value={strategy} onChange={(e) => setStrategy(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white outline-none">
@@ -112,13 +108,6 @@ export default function Robustness() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="card lg:col-span-2">
             <h3 className="text-lg font-bold mb-4">Simulated Return Distribution (50 Iterations)</h3>
-            
-            {isSimpleMode && (
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4 text-sm text-textMuted leading-relaxed">
-                <strong className="text-white">What this means:</strong> We took your strategy and ran it 50 times against historical data, but purposefully injected random market chaos (slippage, price shocks) each time. The bars below show where your returns are most likely to land in the real world.
-              </div>
-            )}
-            
             <div className="w-full h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={distribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -140,25 +129,11 @@ export default function Robustness() {
               <span className="font-bold text-white">{stats.mean}%</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-textMuted">
-                <GlossaryTerm 
-                  term="5th Percentile (P5)" 
-                  simpleLabel="Worst Expected Outcome"
-                  definition="If 95% of the time things go okay, this is what happens in the bottom 5% unlucky scenarios."
-                  isSimpleMode={isSimpleMode}
-                />
-              </span>
+              <span className="text-textMuted">5th Percentile (P5)</span>
               <span className="font-bold text-danger">{stats.p5}%</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-textMuted">
-                <GlossaryTerm 
-                  term="95th Percentile (P95)" 
-                  simpleLabel="Best Expected Outcome"
-                  definition="The optimistic scenario where your strategy avoids most market shocks."
-                  isSimpleMode={isSimpleMode}
-                />
-              </span>
+              <span className="text-textMuted">95th Percentile (P95)</span>
               <span className="font-bold text-secondary">{stats.p95}%</span>
             </div>
             <div className="flex justify-between items-center">
